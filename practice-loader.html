@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MathProj - Загрузка</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #000;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .loading-screen {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            background-color: #222;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(120, 120, 120, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(120, 120, 120, 0.1) 0%, transparent 20%);
+        }
+        
+        /* Створки ангара с улучшенной текстурой */
+        .door {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: 
+                linear-gradient(135deg, #333 0%, #555 25%, #444 50%, #333 75%, #222 100%),
+                repeating-linear-gradient(0deg, rgba(0,0,0,0.2) 0px, rgba(0,0,0,0.2) 1px, transparent 1px, transparent 4px);
+            background-blend-mode: overlay;
+            z-index: 10;
+            transition: transform 1.5s ease-in-out;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.7);
+        }
+        
+        .door-top {
+            top: 0;
+            transform: translateY(-100%);
+            animation: closeTop 1.5s forwards, openTop 1.5s 6.5s forwards;
+            border-bottom: 2px solid #555;
+        }
+        
+        .door-bottom {
+            bottom: 0;
+            transform: translateY(100%);
+            animation: closeBottom 1.5s forwards, openBottom 1.5s 6.5s forwards;
+            border-top: 2px solid #555;
+        }
+        
+        /* Винтики на створках */
+        .screw {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: 
+                radial-gradient(circle at 50% 50%, #888 0%, #555 30%, #222 70%, #000 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 3px rgba(0,0,0,0.8);
+            z-index: 11;
+        }
+        
+        .screw::before, .screw::after {
+            content: '';
+            position: absolute;
+            background-color: #000;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .screw::before {
+            width: 6px;
+            height: 1px;
+        }
+        
+        .screw::after {
+            width: 1px;
+            height: 6px;
+        }
+        
+        .door-top .screw {
+            bottom: 15px;
+        }
+        
+        .door-bottom .screw {
+            top: 15px;
+        }
+        
+        .screw-left {
+            left: 30px;
+        }
+        
+        .screw-right {
+            right: 30px;
+        }
+        
+        /* Трещины и царапины */
+        .crack {
+            position: absolute;
+            background: linear-gradient(to right, transparent, rgba(0,0,0,0.3), transparent);
+            z-index: 11;
+        }
+        
+        .crack-1 {
+            width: 80px;
+            height: 1px;
+            top: 30%;
+            left: 20%;
+            transform: rotate(15deg);
+        }
+        
+        .crack-2 {
+            width: 120px;
+            height: 2px;
+            top: 60%;
+            right: 15%;
+            transform: rotate(-5deg);
+        }
+        
+        .scratch {
+            position: absolute;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
+            height: 1px;
+            z-index: 11;
+        }
+        
+        .scratch-1 {
+            width: 150px;
+            top: 45%;
+            left: 10%;
+            transform: rotate(2deg);
+        }
+        
+        .scratch-2 {
+            width: 100px;
+            bottom: 25%;
+            right: 20%;
+            transform: rotate(-3deg);
+        }
+        
+        /* Черно-желтые полоски под углом 45° */
+        .door-top::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: repeating-linear-gradient(
+                45deg,
+                #000,
+                #000 10px,
+                #ff0 10px,
+                #ff0 20px
+            );
+            background-size: 28px 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+        
+        .door-bottom::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: repeating-linear-gradient(
+                45deg,
+                #000,
+                #000 10px,
+                #ff0 10px,
+                #ff0 20px
+            );
+            background-size: 28px 28px;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.5);
+        }
+        
+        /* Предупреждающие знаки */
+        .warning-sign {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: #ff0;
+            border: 2px solid #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 11;
+            box-shadow: 0 0 10px rgba(255,255,0,0.5);
+        }
+        
+        .warning-sign::before {
+            content: '!';
+            color: #000;
+            font-weight: bold;
+            font-size: 24px;
+        }
+        
+        .warning-top {
+            top: 20px;
+            right: 100px;
+        }
+        
+        .warning-bottom {
+            bottom: 20px;
+            left: 100px;
+        }
+        
+        /* Центральный круг с логотипом */
+        .center-logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle at 30% 30%, #444, #222 70%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            box-shadow: 
+                0 0 0 8px #ff0, 
+                0 0 20px rgba(255, 255, 0, 0.5),
+                inset 0 0 20px rgba(0,0,0,0.5);
+            opacity: 0;
+            animation: fadeIn 0.5s 1.5s forwards, fadeOut 0.5s 6s forwards;
+        }
+        
+        .center-logo::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                repeating-conic-gradient(from 0deg, #333 0deg 10deg, #444 10deg 20deg);
+            z-index: -1;
+        }
+        
+        .center-logo img {
+            height: 60px;
+            width: auto;
+            filter: drop-shadow(0 0 5px rgba(255,255,0,0.7));
+        }
+        
+        /* Контейнер для лампочек */
+        .lamps-container {
+            position: absolute;
+            top: 42%;
+            left: 49%;
+            transform: translate(-50%, -50%);
+            width: 110px;
+            height: 110px;
+            z-index: 15;
+            opacity: 0;
+            animation: fadeIn 0.5s 1.5s forwards, fadeOut 0.5s 6s forwards;
+        }
+        
+        /* Лампочки */
+        .lamp {
+            position: absolute;
+            width: 12px;
+            height: 18px;
+            background: linear-gradient(to bottom, #fff 0%, #ff0 70%, #222 70%, #222 100%);
+            border-radius: 6px 6px 3px 3px;
+            box-shadow: 0 0 10px #ff0, 0 0 20px #ff0;
+            top: 50%;
+            left: 50%;
+            transform-origin: 6px 70px;
+            animation: 
+                rotateLamps 1.5s linear infinite,
+                flicker 0.3s infinite alternate;
+        }
+        
+        /* Создаем 8 лампочек с разными задержками анимации */
+        .lamp:nth-child(1) { transform: rotate(0deg) translateY(-70px); animation-delay: 0s, 0.1s; }
+        .lamp:nth-child(2) { transform: rotate(45deg) translateY(-70px); animation-delay: 0.1875s, 0.2s; }
+        .lamp:nth-child(3) { transform: rotate(90deg) translateY(-70px); animation-delay: 0.375s, 0.3s; }
+        .lamp:nth-child(4) { transform: rotate(135deg) translateY(-70px); animation-delay: 0.5625s, 0.4s; }
+        .lamp:nth-child(5) { transform: rotate(180deg) translateY(-70px); animation-delay: 0.75s, 0.5s; }
+        .lamp:nth-child(6) { transform: rotate(225deg) translateY(-70px); animation-delay: 0.9375s, 0.6s; }
+        .lamp:nth-child(7) { transform: rotate(270deg) translateY(-70px); animation-delay: 1.125s, 0.7s; }
+        .lamp:nth-child(8) { transform: rotate(315deg) translateY(-70px); animation-delay: 1.3125s, 0.8s; }
+        
+        /* Пыль и частицы */
+        .particle {
+            position: absolute;
+            background-color: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            z-index: 5;
+            animation: float 15s infinite linear;
+        }
+        
+        .particle:nth-child(1) {
+            width: 3px;
+            height: 3px;
+            top: 20%;
+            left: 10%;
+            animation-duration: 20s;
+        }
+        
+        .particle:nth-child(2) {
+            width: 2px;
+            height: 2px;
+            top: 60%;
+            left: 80%;
+            animation-duration: 25s;
+        }
+        
+        .particle:nth-child(3) {
+            width: 4px;
+            height: 4px;
+            top: 40%;
+            left: 50%;
+            animation-duration: 18s;
+        }
+        
+        /* Анимации */
+        @keyframes closeTop {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(0); }
+        }
+        
+        @keyframes closeBottom {
+            0% { transform: translateY(100%); }
+            100% { transform: translateY(0); }
+        }
+        
+        @keyframes openTop {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-100%); }
+        }
+        
+        @keyframes openBottom {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(100%); }
+        }
+        
+        @keyframes rotateLamps {
+            0% { transform: rotate(0deg) translateY(-70px); }
+            100% { transform: rotate(360deg) translateY(-70px); }
+        }
+        
+        @keyframes flicker {
+            0% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0) translateX(0); }
+            25% { transform: translateY(-20px) translateX(10px); }
+            50% { transform: translateY(-10px) translateX(20px); }
+            75% { transform: translateY(-30px) translateX(15px); }
+            100% { transform: translateY(0) translateX(0); }
+        }
+        
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        
+        /* Информационный текст */
+        .loading-text {
+            position: absolute;
+            bottom: 20%;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: #ff0;
+            font-size: 18px;
+            z-index: 25;
+            opacity: 0;
+            animation: fadeIn 0.5s 1.5s forwards, fadeOut 0.5s 6s forwards;
+            text-shadow: 0 0 10px rgba(255,255,0,0.7);
+            letter-spacing: 1px;
+        }
+        
+        /* Медиа-запросы для мобильных устройств */
+        @media (max-width: 768px) {
+            .center-logo {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .center-logo img {
+                height: 50px;
+            }
+            
+            .lamps-container {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .lamp {
+                transform-origin: 6px 60px;
+            }
+            
+            .lamp:nth-child(1) { transform: rotate(0deg) translateY(-60px); }
+            .lamp:nth-child(2) { transform: rotate(45deg) translateY(-60px); }
+            .lamp:nth-child(3) { transform: rotate(90deg) translateY(-60px); }
+            .lamp:nth-child(4) { transform: rotate(135deg) translateY(-60px); }
+            .lamp:nth-child(5) { transform: rotate(180deg) translateY(-60px); }
+            .lamp:nth-child(6) { transform: rotate(225deg) translateY(-60px); }
+            .lamp:nth-child(7) { transform: rotate(270deg) translateY(-60px); }
+            .lamp:nth-child(8) { transform: rotate(315deg) translateY(-60px); }
+            
+            @keyframes rotateLamps {
+                0% { transform: rotate(0deg) translateY(-60px); }
+                100% { transform: rotate(360deg) translateY(-60px); }
+            }
+            
+            .warning-sign {
+                width: 30px;
+                height: 30px;
+            }
+            
+            .warning-sign::before {
+                font-size: 18px;
+            }
+            
+            .screw {
+                width: 8px;
+                height: 8px;
+            }
+            
+            .screw::before {
+                width: 4px;
+                height: 1px;
+            }
+            
+            .screw::after {
+                width: 1px;
+                height: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-screen">
+        <!-- Створки ангара -->
+        <div class="door door-top">
+            <!-- Винтики -->
+            <div class="screw screw-left"></div>
+            <div class="screw screw-right"></div>
+            
+            <!-- Трещины и царапины -->
+            <div class="crack crack-1"></div>
+            <div class="scratch scratch-1"></div>
+            
+            <!-- Предупреждающие знаки -->
+            <div class="warning-sign warning-top"></div>
+        </div>
+        <div class="door door-bottom">
+            <!-- Винтики -->
+            <div class="screw screw-left"></div>
+            <div class="screw screw-right"></div>
+            
+            <!-- Трещины и царапины -->
+            <div class="crack crack-2"></div>
+            <div class="scratch scratch-2"></div>
+            
+            <!-- Предупреждающие знаки -->
+            <div class="warning-sign warning-bottom"></div>
+        </div>
+        
+        <!-- Частицы пыли -->
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        
+        <!-- Центральный круг с логотипом -->
+        <div class="center-logo">
+            <img src="logo.png" alt="MathProj Logo">
+        </div>
+        
+        <!-- Контейнер для лампочек -->
+        <div class="lamps-container">
+            <div class="lamp"></div>
+            <div class="lamp"></div>
+            <div class="lamp"></div>
+            <div class="lamp"></div>
+            <div class="lamp"></div>
+            <div class="lamp"></div>
+            <div class="lamp"></div>
+            <div class="lamp"></div>
+        </div>
+        
+        <!-- Текст загрузки -->
+        <div class="loading-text">Загрузка MathProj...</div>
+    </div>
+</body>
+</html>

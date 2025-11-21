@@ -1458,6 +1458,191 @@
             border-top: 2px solid #4a5568;
         }
         
+        /* Добавьте эти стили в раздел темной темы (после существующих стилей для dark-theme) */
+
+/* Основной цвет текста для темной темы */
+body.dark-theme {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #e6e6e6;
+}
+
+/* Заголовки и текст в карточках */
+body.dark-theme .card,
+body.dark-theme .problem h3,
+body.dark-theme .problem p,
+body.dark-theme .solution p,
+body.dark-theme .comment p,
+body.dark-theme .preview-title,
+body.dark-theme .preview-text,
+body.dark-theme .section-title,
+body.dark-theme .profile-name,
+body.dark-theme .profile-description,
+body.dark-theme .profile-section-title,
+body.dark-theme .account-management h3,
+body.dark-theme .account-management h4,
+body.dark-theme .account-management label {
+    color: #e6e6e6;
+}
+
+/* Мета-информация и вспомогательный текст */
+body.dark-theme .problem-meta,
+body.dark-theme .comment-meta,
+body.dark-theme .stat-label,
+body.dark-theme .counter-text,
+body.dark-theme .file-size-info,
+body.dark-theme .file-name,
+body.dark-theme .character-count,
+body.dark-theme .password-requirements,
+body.dark-theme .latex-help {
+    color: #a0aec0;
+}
+
+/* Текст в формах */
+body.dark-theme .form-group input,
+body.dark-theme .form-group textarea,
+body.dark-theme .form-group select {
+    color: #e6e6e6;
+}
+
+/* Текст в модальных окнах */
+body.dark-theme .faq-question,
+body.dark-theme .faq-header h2,
+body.dark-theme .preview-header h2,
+body.dark-theme .auth-tab,
+body.dark-theme .auth-switch {
+    color: #e6e6e6;
+}
+
+/* Активные табы в авторизации */
+body.dark-theme .auth-tab.active {
+    color: #6a89cc;
+}
+
+/* Иконки закрытия модальных окон */
+body.dark-theme .close-faq,
+body.dark-theme .close-preview,
+body.dark-theme .close-modal {
+    color: #e6e6e6;
+}
+
+/* Текст в VS Code окне */
+body.dark-theme .vscode-window .tabs label.l {
+    color: #e6e6e6;
+}
+
+/* Текст в статистике профиля */
+body.dark-theme .stat-number {
+    color: #6a89cc;
+}
+
+/* Текст в списках профиля */
+body.dark-theme .profile-list-item .problem-meta {
+    color: #a0aec0;
+}
+
+/* Сообщения об ошибках и валидации */
+body.dark-theme .password-error,
+body.dark-theme .validation-error {
+    color: #fc8181;
+}
+
+/* Кнопки реакций */
+body.dark-theme .reaction-btn {
+    color: #e6e6e6;
+}
+
+body.dark-theme .reaction-btn.liked {
+    color: #6a89cc;
+}
+
+body.dark-theme .reaction-btn.disliked {
+    color: #fc8181;
+}
+
+/* Значки лучшего решения */
+body.dark-theme .best-solution-badge {
+    color: #333;
+}
+
+body.dark-theme .best-solution-btn {
+    color: #333;
+}
+
+/* Кнопки удаления */
+body.dark-theme .delete-btn {
+    color: #fc8181;
+}
+
+/* Кнопки LaTeX панели */
+body.dark-theme .latex-btn {
+    color: #e6e6e6;
+}
+
+/* Пустые состояния */
+body.dark-theme .empty-profile-list {
+    color: #a0aec0;
+}
+
+/* Текст в навигации профиля */
+body.dark-theme .profile-list-item a {
+    color: #6a89cc;
+}
+
+/* Предупреждения о размере файлов */
+body.dark-theme .file-size-warning {
+    color: #fc8181;
+}
+
+/* Подсветка символов при превышении лимита */
+body.dark-theme .character-count.error {
+    color: #fc8181;
+}
+
+/* Текст в индикаторе загрузки */
+body.dark-theme .loading-text {
+    color: #e6e6e6;
+}
+
+/* Текст в карточке загрузки */
+body.dark-theme .card-l {
+    color: #e6e6e6;
+}
+
+/* Дополнительные текстовые элементы */
+body.dark-theme .image-upload-label,
+body.dark-theme .latex-preview-title,
+body.dark-theme .page-info,
+body.dark-theme .pagination-ellipsis {
+    color: #e6e6e6;
+}
+
+/* Текст в счетчиках */
+body.dark-theme .counter-number {
+    color: #6a89cc;
+}
+
+/* Текст в сложности задач */
+body.dark-theme .difficulty-easy {
+    color: #68d391;
+}
+
+body.dark-theme .difficulty-medium {
+    color: #f6e05e;
+}
+
+body.dark-theme .difficulty-hard {
+    color: #fc8181;
+}
+
+/* Текст в уведомлениях */
+body.dark-theme .success-message {
+    color: #c8f7c8;
+}
+
+body.dark-theme .error-message {
+    color: #fed7d7;
+}
+        
         /* Стили для кнопки избранного */
         .favorite-btn {
             background: none;
