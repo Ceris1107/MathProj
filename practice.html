@@ -1,0 +1,2418 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MathProj - Практика</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Упрощенные стили для экрана загрузки */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: transparent;
+            overflow: hidden;
+            z-index: 9999;
+            display: none;
+        }
+        
+        /* Створки ангара */
+        .door {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: linear-gradient(135deg, #333 0%, #555 100%);
+            z-index: 10;
+            transition: transform 2s ease-in-out;
+        }
+        
+        .door-top {
+            top: 0;
+            transform: translateY(-100%);
+        }
+        
+        .door-bottom {
+            bottom: 0;
+            transform: translateY(100%);
+        }
+        
+        /* Стили для практики */
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        .user-stats-bar {
+            background: linear-gradient(135deg, #6a89cc, #4a69bd);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .progress-bar {
+            width: 200px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #ffd700;
+            transition: width 0.3s ease;
+        }
+        
+        .arcades-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .arcade-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-align: center;
+        }
+        
+        .arcade-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .arcade-icon {
+            font-size: 3rem;
+            color: #4a69bd;
+            margin-bottom: 15px;
+        }
+        
+        .arcade-stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 15px 0;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+        
+        /* Игровой интерфейс */
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .timer-container {
+            text-align: center;
+        }
+        
+        .timer {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        
+        .problem-container {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .problem-statement {
+            font-size: 1.4rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        
+        .answer-section {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #user-answer {
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            width: 200px;
+            text-align: center;
+        }
+        
+        .game-feedback {
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            min-height: 30px;
+        }
+        
+        /* Статистика */
+        .overall-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4a69bd;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        /* Прогресс-бар для профиля */
+        .profile-progress-bar {
+            width: 200px;
+            height: 10px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        
+        .profile-progress-bar .progress-fill {
+            height: 100%;
+            background: #4a69bd;
+            transition: width 0.3s ease;
+        }
+        
+        /* Стили для скрытия элементов во время игры */
+        .game-mode header nav,
+        .game-mode header .user-section,
+        .game-mode header .theme-label,
+        .game-mode header .logout-btn,
+        .game-mode nav {
+            display: none !important;
+        }
+        
+        /* Темная тема */
+        body.dark-theme .arcade-card,
+        body.dark-theme .stat-card,
+        body.dark-theme .problem-container {
+            background: #2d3748;
+            color: #e6e6e6;
+        }
+        
+        body.dark-theme #user-answer {
+            background: #4a5568;
+            border-color: #2d3748;
+            color: #e6e6e6;
+        }
+        
+        body.dark-theme .profile-progress-bar {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        body.dark-theme .profile-progress-bar .progress-fill {
+            background: #6a89cc;
+        }
+        
+        /* Стили для таблицы статистики */
+        .stats-table {
+            display: table;
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .stats-row {
+            display: table-row;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .stats-cell {
+            display: table-cell;
+            padding: 10px 15px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        body.dark-theme .stats-row {
+            border-bottom-color: #4a5568;
+        }
+        
+        body.dark-theme .stats-row:first-child {
+            background-color: #2d3748 !important;
+        }
+        
+        /* Стили для форм */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        body.dark-theme .form-group label {
+            color: #e6e6e6;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        
+        body.dark-theme .form-group input,
+        body.dark-theme .form-group textarea {
+            background: #4a5568;
+            border-color: #2d3748;
+            color: #e6e6e6;
+        }
+        
+        .character-count {
+            text-align: right;
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        .password-requirements {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin-top: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .password-requirements ul {
+            margin: 5px 0 0 20px;
+            padding: 0;
+        }
+        
+        .password-error {
+            color: #e74c3c;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Экран загрузки - упрощенный -->
+    <div id="loading-screen" class="loading-screen" style="display: none;">
+        <!-- Створки ангара -->
+        <div class="door door-top"></div>
+        <div class="door door-bottom"></div>
+    </div>
+
+    <header>
+        <div class="theme-label">
+            <label class="switch">
+                <input id="theme-toggle" type="checkbox" />
+                <div class="slider round">
+                    <div class="sun-moon">
+                        <svg id="moon-dot-1" class="moon-dot" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="50"></circle>
+                        </svg>
+                        <svg id="moon-dot-2" class="moon-dot" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="50"></circle>
+                        </svg>
+                        <svg id="moon-dot-3" class="moon-dot" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="50"></circle>
+                        </svg>
+                        <svg id="light-ray-1" class="light-ray" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="50"></circle>
+                        </svg>
+                        <svg id="light-ray-2" class="light-ray" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="50"></circle>
+                        </svg>
+                        <svg id="light-ray-3" class="light-ray" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="50"></circle>
+                        </svg>
+                    </div>
+                    <div class="stars">
+                        <svg id="star-1" class="star" viewBox="0 0 20 20">
+                            <path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z"></path>
+                        </svg>
+                        <svg id="star-2" class="star" viewBox="0 0 20 20">
+                            <path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z"></path>
+                        </svg>
+                        <svg id="star-3" class="star" viewBox="0 0 20 20">
+                            <path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z"></path>
+                        </svg>
+                        <svg id="star-4" class="star" viewBox="0 0 20 20">
+                            <path d="M 0 10 C 10 10,10 10 ,0 10 C 10 10 , 10 10 , 10 20 C 10 10 , 10 10 , 20 10 C 10 10 , 10 10 , 10 0 C 10 10,10 10 ,0 10 Z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </label>
+        </div>
+        <div class="container">
+            <h1>MathProj - Практика</h1>
+            <p>Развивайте математические навыки через увлекательные аркады!</p>
+            
+            <div class="user-section">
+                <div class="user-info" id="user-info" style="display: none;">
+                    <div class="user-avatar" id="user-avatar"></div>
+                    <span id="user-name"></span>
+                </div>
+                <button class="btn" id="login-btn"><i class="fas fa-user"></i> Войти</button>
+                <button class="btn btn-secondary logout-btn" id="logout-btn" style="display: none;"><i class="fas fa-sign-out-alt"></i> Выйти</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="#" class="active" id="nav-play"><i class="fas fa-play-circle"></i> Играть</a></li>
+                <li><a href="#" id="nav-profile"><i class="fas fa-user-circle"></i> Профиль</a></li>
+                <li><a href="index.html"><i class="fas fa-home"></i> Главная</a></li>
+            </ul>
+        </nav>
+
+        <!-- Раздел "Играть" -->
+        <div id="play-section" class="section active">
+            <div class="card">
+                <h2 class="section-title"><i class="fas fa-play-circle"></i> Выберите аркаду</h2>
+                
+                <div class="user-stats-bar">
+                    <div class="level-info">Уровень: <span id="user-level">1</span></div>
+                    <div class="xp-info">Опыт: <span id="user-xp">0</span>/<span id="next-level-xp">100</span></div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="xp-progress" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="arcades-grid">
+                    <!-- Quadratic Chaos -->
+                    <div class="arcade-card" data-arcade="quadratic">
+                        <div class="arcade-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3>Quadratic Chaos</h3>
+                        <p>Решайте квадратные уравнения на время</p>
+                        <div class="arcade-stats">
+                            <div class="stat">Рекорд: <span class="best-score">0/10</span></div>
+                            <div class="stat">Сыграно: <span class="games-played">0</span></div>
+                        </div>
+                        <button class="btn start-arcade">Играть</button>
+                    </div>
+
+                    <!-- Parameter Blitz -->
+                    <div class="arcade-card" data-arcade="parameter">
+                        <div class="arcade-icon">
+                            <i class="fas fa-sliders-h"></i>
+                        </div>
+                        <h3>Parameter Blitz</h3>
+                        <p>Задачи с параметром на скорость</p>
+                        <div class="arcade-stats">
+                            <div class="stat">Рекорд: <span class="best-score">0/10</span></div>
+                            <div class="stat">Сыграно: <span class="games-played">0</span></div>
+                        </div>
+                        <button class="btn start-arcade">Играть</button>
+                    </div>
+
+                    <!-- Algebra Rush -->
+                    <div class="arcade-card" data-arcade="algebra">
+                        <div class="arcade-icon">
+                            <i class="fas fa-superscript"></i>
+                        </div>
+                        <h3>Algebra Rush</h3>
+                        <p>Алгебраические уравнения и системы</p>
+                        <div class="arcade-stats">
+                            <div class="stat">Рекорд: <span class="best-score">0/10</span></div>
+                            <div class="stat">Сыграно: <span class="games-played">0</span></div>
+                        </div>
+                        <button class="btn start-arcade">Играть</button>
+                    </div>
+
+                    <!-- Geometry Dash -->
+                    <div class="arcade-card" data-arcade="geometry">
+                        <div class="arcade-icon">
+                            <i class="fas fa-draw-polygon"></i>
+                        </div>
+                        <h3>Geometry Dash</h3>
+                        <p>Геометрические задачи и теоремы</p>
+                        <div class="arcade-stats">
+                            <div class="stat">Рекорд: <span class="best-score">0/10</span></div>
+                            <div class="stat">Сыграно: <span class="games-played">0</span></div>
+                        </div>
+                        <button class="btn start-arcade">Играть</button>
+                    </div>
+
+                    <!-- Trigonometry Tower -->
+                    <div class="arcade-card" data-arcade="trigonometry">
+                        <div class="arcade-icon">
+                            <i class="fas fa-wave-square"></i>
+                        </div>
+                        <h3>Trigonometry Tower</h3>
+                        <p>Тригонометрические уравнения и тождества</p>
+                        <div class="arcade-stats">
+                            <div class="stat">Рекорд: <span class="best-score">0/10</span></div>
+                            <div class="stat">Сыграно: <span class="games-played">0</span></div>
+                        </div>
+                        <button class="btn start-arcade">Играть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Раздел "Профиль" -->
+        <div id="profile-section" class="section">
+            <div class="card">
+                <h2 class="section-title"><i class="fas fa-user-circle"></i> Ваш профиль</h2>
+                
+                <div id="profile-login-required" class="login-required" style="display: none;">
+                    <p>Для просмотра профиля необходимо войти в аккаунт</p>
+                    <button class="btn" id="login-for-profile"><i class="fas fa-sign-in-alt"></i> Войти</button>
+                </div>
+                
+                <div id="profile-content" style="display: none;">
+                    <div class="profile-header">
+                        <div class="profile-avatar" id="profile-avatar"></div>
+                        <div class="profile-info">
+                            <h3 id="profile-name"></h3>
+                            <p class="profile-description" id="profile-description"></p>
+                            <div class="level-display">
+                                <span class="level">Уровень <span id="profile-level">1</span></span>
+                                <span class="xp">Опыт: <span id="profile-xp">0</span>/<span id="profile-next-xp">100</span></span>
+                                <div class="profile-progress-bar">
+                                    <div class="progress-fill" id="profile-xp-progress" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <p class="profile-registration">Присоединился: <span id="profile-registration-date"></span></p>
+                        </div>
+                    </div>
+
+                    <!-- Статистика практики -->
+                    <div class="practice-stats">
+                        <h3 class="profile-section-title"><i class="fas fa-chart-bar"></i> Статистика практика</h3>
+                        
+                        <div class="overall-stats">
+                            <div class="stat-card">
+                                <div class="stat-value" id="total-games">0</div>
+                                <div class="stat-label">Всего игр</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="total-correct">0</div>
+                                <div class="stat-label">Правильных ответов</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="accuracy">0%</div>
+                                <div class="stat-label">Точность</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="total-xp">0</div>
+                                <div class="stat-label">Всего XP</div>
+                            </div>
+                        </div>
+
+                        <div class="arcade-stats-detailed">
+                            <h4 class="profile-section-title">Статистика по аркадам</h4>
+                            <div class="stats-table" id="arcade-stats-table">
+                                <!-- Заголовки таблицы -->
+                                <div class="stats-row" style="font-weight: bold; background-color: #f0f0f0;">
+                                    <div class="stats-cell">Аркада</div>
+                                    <div class="stats-cell">Сыграно</div>
+                                    <div class="stats-cell">Правильно</div>
+                                    <div class="stats-cell">Лучший счет</div>
+                                    <div class="stats-cell">Всего XP</div>
+                                </div>
+                                <!-- Данные будут заполняться JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Управление аккаунтом -->
+                    <div class="account-management">
+                        <h3 class="profile-section-title"><i class="fas fa-cog"></i> Управление аккаунтом</h3>
+                        <div class="form-group">
+                            <label for="account-description">Описание профиля (максимум 100 символов):</label>
+                            <textarea id="account-description" maxlength="100" placeholder="Расскажите о себе..."></textarea>
+                            <div class="character-count">
+                                <span id="description-chars">0</span>/100 символов
+                            </div>
+                        </div>
+                        <button class="btn" id="save-description-btn">
+                            <i class="fas fa-save"></i> Сохранить описание
+                        </button>
+                        
+                        <!-- Форма изменения пароля -->
+                        <div class="form-group" style="margin-top: 20px;">
+                            <h4>Изменение пароля</h4>
+                            <label for="old-password">Старый пароль:</label>
+                            <input type="password" id="old-password" placeholder="Введите старый пароль">
+                            
+                            <label for="new-password">Новый пароль:</label>
+                            <input type="password" id="new-password" placeholder="Введите новый пароль">
+                            <div class="password-requirements">
+                                Пароль может содержать только:
+                                <ul>
+                                    <li>Минимум 8 символов</li>
+                                    <li>Только английские буквы (заглавные или строчные)</li>
+                                    <li>Цифры</li>
+                                    <li>Точку (.)</li>
+                                </ul>
+                            </div>
+                            <div class="password-error" id="new-password-error"></div>
+                            
+                            <label for="confirm-new-password">Подтверждение нового пароля:</label>
+                            <input type="password" id="confirm-new-password" placeholder="Повторите новый пароль">
+                            <div class="password-error" id="confirm-password-error"></div>
+                        </div>
+                        <button class="btn" id="change-password-btn">
+                            <i class="fas fa-key"></i> Изменить пароль
+                        </button>
+                        
+                        <button class="btn btn-secondary" id="delete-account-btn">
+                            <i class="fas fa-trash"></i> Удалить аккаунт
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Игровой интерфейс -->
+        <div id="game-section" class="section">
+            <div class="card">
+                <div class="game-header">
+                    <div class="game-info">
+                        <div class="arcade-name" id="current-arcade-name">Quadratic Chaos</div>
+                        <div class="problem-counter">Задача <span id="current-problem">1</span>/10</div>
+                    </div>
+                    <div class="timer-container">
+                        <div class="timer" id="game-timer">60</div>
+                    </div>
+                </div>
+
+                <div class="problem-container">
+                    <div class="problem-statement" id="problem-statement">
+                        <!-- Условие задачи будет здесь -->
+                    </div>
+                    
+                    <div class="answer-section">
+                        <input type="text" id="user-answer" placeholder="Введите ваш ответ..." autocomplete="off">
+                        <button id="submit-answer" class="btn">Ответить</button>
+                    </div>
+                </div>
+
+                <div class="game-feedback" id="game-feedback"></div>
+            </div>
+        </div>
+
+        <!-- Экран результатов -->
+        <div id="results-section" class="section">
+            <div class="card">
+                <div class="results-container">
+                    <h2 class="section-title">Результаты аркады</h2>
+                    <div class="score-display">
+                        <div class="score">Правильных ответов: <span id="correct-answers">0</span>/10</div>
+                        <div class="xp-earned">Получено опыта: <span id="xp-earned">0</span> XP</div>
+                        <div class="level-up" id="level-up-message" style="display: none;">
+                            <i class="fas fa-trophy"></i> Поздравляем! Вы достигли уровня <span id="new-level">2</span>!
+                        </div>
+                    </div>
+                    
+                    <div class="results-actions">
+                        <button id="play-again" class="btn">Играть снова</button>
+                        <button id="back-to-arcades" class="btn btn-secondary">К аркадам</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно авторизации -->
+    <div class="auth-modal" id="auth-modal">
+        <div class="auth-content">
+            <div class="auth-tabs">
+                <div class="auth-tab active" data-tab="login">Вход</div>
+                <div class="auth-tab" data-tab="register">Регистрация</div>
+            </div>
+            
+            <div class="auth-form active" id="login-form">
+                <div class="form-group">
+                    <label for="login-email">Email:</label>
+                    <input type="email" id="login-email" placeholder="Введите ваш email">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Пароль:</label>
+                    <input type="password" id="login-password" placeholder="Введите ваш пароль">
+                </div>
+                <div id="login-error" class="error-message"></div>
+                <button class="btn" id="submit-login"><i class="fas fa-sign-in-alt"></i> Войти</button>
+                
+                <div class="auth-switch">
+                    Нет аккаунта? <a id="switch-to-register">Зарегистрироваться</a>
+                </div>
+            </div>
+            
+            <div class="auth-form" id="register-form">
+                <div class="form-group">
+                    <label for="register-name">Имя:</label>
+                    <input type="text" id="register-name" placeholder="Введите ваше имя (максимум 40 символов)" maxlength="40">
+                    <div class="character-count">
+                        <span id="register-name-chars">0</span>/40 символов
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="register-email">Email:</label>
+                    <input type="email" id="register-email" placeholder="Введите ваш email">
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Пароль:</label>
+                    <input type="password" id="register-password" placeholder="Придумайте пароль">
+                <div class="password-requirements">
+                        Пароль может содержать только:
+                        <ul>
+                            <li>Минимум 8 символов</li>
+                            <li>Только английские буквы (заглавные или строчные)</li>
+                            <li>Цифры</li>
+                            <li>Точку (.)</li>
+                        </ul>
+                    </div>
+                    <div class="password-error" id="register-password-error"></div>
+                </div>
+                <div class="form-group">
+                    <label for="register-password-confirm">Подтверждение пароля:</label>
+                    <input type="password" id="register-password-confirm" placeholder="Повторите пароль">
+                </div>
+                <div id="register-error" class="error-message"></div>
+                <button class="btn" id="submit-register"><i class="fas fa-user-plus"></i> Зарегистрироваться</button>
+                
+                <div class="auth-switch">
+                    Уже есть аккаунт? <a id="switch-to-login">Войти</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="database.js"></script>
+    <script>
+        // Глобальные переменные для практики
+        const forumDB = new SupabaseDatabase();
+        let currentUser = null;
+        let currentArcade = null;
+        let gameState = {
+            isPlaying: false,
+            currentProblem: 0,
+            timer: null,
+            timeLeft: 60,
+            problems: [],
+            answers: [],
+            correctAnswers: 0,
+            xpEarned: 0,
+            answerSubmitted: false
+        };
+        
+        // Функции для экрана загрузки
+        function showLoadingScreen() {
+            const loadingScreen = document.getElementById('loading-screen');
+            const topDoor = document.querySelector('.door-top');
+            const bottomDoor = document.querySelector('.door-bottom');
+            
+            loadingScreen.style.display = 'block';
+            
+            // Сброс анимаций
+            topDoor.style.transform = 'translateY(-100%)';
+            bottomDoor.style.transform = 'translateY(100%)';
+            
+            // Анимация закрытия створок
+            setTimeout(() => {
+                topDoor.style.transform = 'translateY(0)';
+                bottomDoor.style.transform = 'translateY(0)';
+            }, 10);
+        }
+
+        function hideLoadingScreen() {
+            const loadingScreen = document.getElementById('loading-screen');
+            const topDoor = document.querySelector('.door-top');
+            const bottomDoor = document.querySelector('.door-bottom');
+            
+            // Анимация открытия створок
+            topDoor.style.transform = 'translateY(-100%)';
+            bottomDoor.style.transform = 'translateY(100%)';
+            
+            // Скрыть после завершения анимации (2 секунды)
+            setTimeout(() => {
+                loadingScreen.style.display = 'none';
+            }, 2000);
+        }
+
+        // Функция для форматирования уравнений
+        function formatCoefficient(coeff, variable) {
+            if (coeff === 1) return variable;
+            if (coeff === -1) return `-${variable}`;
+            return `${coeff}${variable}`;
+        }
+
+        // Функция для форматирования квадратных уравнений
+        function formatQuadraticEquation(a, b, c) {
+            let equation = '';
+            
+            if (a !== 0) {
+                if (a === 1) {
+                    equation += 'x²';
+                } else if (a === -1) {
+                    equation += '-x²';
+                } else {
+                    equation += `${a}x²`;
+                }
+            }
+            
+            if (b !== 0) {
+                if (b > 0) {
+                    equation += ` + ${formatCoefficient(b, 'x')}`;
+                } else {
+                    equation += ` - ${formatCoefficient(Math.abs(b), 'x')}`;
+                }
+            }
+            
+            if (c !== 0) {
+                if (c > 0) {
+                    equation += ` + ${c}`;
+                } else {
+                    equation += ` - ${Math.abs(c)}`;
+                }
+            }
+            
+            return equation + ' = 0';
+        }
+
+        // Функция для форматирования линейных уравнений
+        function formatLinearEquation(a, b, variable = 'x') {
+            let equation = '';
+            
+            if (a !== 0) {
+                if (a === 1) {
+                    equation += variable;
+                } else if (a === -1) {
+                    equation += `-${variable}`;
+                } else {
+                    equation += `${a}${variable}`;
+                }
+            }
+            
+            if (b !== 0) {
+                if (b > 0) {
+                    if (equation) {
+                        equation += ` + ${b}`;
+                    } else {
+                        equation += `${b}`;
+                    }
+                } else {
+                    equation += ` - ${Math.abs(b)}`;
+                }
+            }
+            
+            if (!equation) {
+                equation = '0';
+            }
+            
+            return equation;
+        }
+
+        // Функция для получения инициалов пользователя
+        function getUserInitials(name) {
+            const words = name.trim().split(/\s+/);
+            if (words.length >= 2) {
+                return (words[0][0] + words[1][0]).toUpperCase();
+            } else if (name.length >= 2) {
+                return name.substring(0, 2).toUpperCase();
+            } else {
+                return name.substring(0, 1).toUpperCase();
+            }
+        }
+
+        // Функция для рендеринга KaTeX
+        function renderMathInElement(element) {
+            if (typeof renderMathInElement !== 'undefined') {
+                renderMathInElement(element, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\(', right: '\\)', display: false},
+                        {left: '\\[', right: '\\]', display: true}
+                    ],
+                    throwOnError: false
+                });
+            }
+        }
+
+        // Система уровней
+        function calculateLevel(xp) {
+            if (xp < 100) return 1;
+            if (xp < 225) return 2;
+            if (xp < 375) return 3;
+            if (xp < 550) return 4;
+            if (xp < 750) return 5;
+            if (xp < 975) return 6;
+            if (xp < 1225) return 7;
+            if (xp < 1500) return 8;
+            if (xp < 1800) return 9;
+            if (xp < 2100) return 10;
+            if (xp < 2400) return 11;
+            if (xp < 2700) return 12;
+            if (xp < 3000) return 13;
+            if (xp < 3300) return 14;
+            if (xp < 3600) return 15;
+            if (xp < 3900) return 16;
+            if (xp < 4200) return 17;
+            if (xp < 4500) return 18;
+            if (xp < 4800) return 19;
+            return 20;
+        }
+
+        function calculateXPForLevel(level) {
+            const levelXP = {
+                1: 100,
+                2: 225,
+                3: 375,
+                4: 550,
+                5: 750,
+                6: 975,
+                7: 1225,
+                8: 1500,
+                9: 1800,
+                10: 2100,
+                11: 2400,
+                12: 2700,
+                13: 3000,
+                14: 3300,
+                15: 3600,
+                16: 3900,
+                17: 4200,
+                18: 4500,
+                19: 4800,
+                20: 4800
+            };
+            return levelXP[level] || 4800;
+        }
+
+        // Основные функции практики
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializePractice();
+            setupNavigation();
+            setupAuthHandlers();
+            loadArcadeStats();
+            
+            if (typeof renderMathInElement !== 'undefined') {
+                renderMathInElement(document.body);
+            }
+        });
+
+        async function initializePractice() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const savedTheme = localStorage.getItem('theme');
+            
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+                themeToggle.checked = true;
+            }
+            
+            themeToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    document.body.classList.add('dark-theme');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    document.body.classList.remove('dark-theme');
+                    localStorage.setItem('theme', 'light');
+                }
+                
+                if (typeof renderMathInElement !== 'undefined') {
+                    renderMathInElement(document.body);
+                }
+            });
+            
+            const savedUser = localStorage.getItem('current_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                await loadPracticeData();
+                updateUserStatsDisplay();
+                checkAuthState();
+            }
+        }
+
+        async function loadPracticeData() {
+            if (!currentUser) return;
+            
+            const userData = await forumDB.getUser(currentUser.id);
+            if (userData) {
+                if (!userData.practice_stats) {
+                    userData.practice_stats = {
+                        total_games: 0,
+                        total_correct: 0,
+                        total_xp_earned: 0,
+                        arcades: {
+                            quadratic: { played: 0, correct: 0, best_score: 0, total_xp: 0 },
+                            parameter: { played: 0, correct: 0, best_score: 0, total_xp: 0 },
+                            algebra: { played: 0, correct: 0, best_score: 0, total_xp: 0 },
+                            geometry: { played: 0, correct: 0, best_score: 0, total_xp: 0 },
+                            trigonometry: { played: 0, correct: 0, best_score: 0, total_xp: 0 }
+                        }
+                    };
+                }
+                
+                const correctLevel = calculateLevel(userData.xp || 0);
+                currentUser.level = correctLevel;
+                currentUser.xp = userData.xp || 0;
+                currentUser.practice_stats = userData.practice_stats;
+                currentUser.description = userData.description || '';
+                currentUser.registration_date = userData.registration_date || '';
+                
+                if (userData.level !== correctLevel) {
+                    await forumDB.updateUser(currentUser.id, { level: correctLevel });
+                }
+                
+                localStorage.setItem('current_user', JSON.stringify(currentUser));
+            }
+        }
+
+        function setupNavigation() {
+            document.getElementById('nav-play').addEventListener('click', function(e) {
+                e.preventDefault();
+                switchSection('play-section');
+                setActiveNav(this);
+            });
+            
+            document.getElementById('nav-profile').addEventListener('click', function(e) {
+                e.preventDefault();
+                switchSection('profile-section');
+                setActiveNav(this);
+                if (currentUser) {
+                    loadProfileData();
+                }
+            });
+            
+            document.querySelectorAll('.start-arcade').forEach(button => {
+                button.addEventListener('click', function() {
+                    if (!currentUser) {
+                        showAuthModal();
+                        return;
+                    }
+                    
+                    const arcadeCard = this.closest('.arcade-card');
+                    const arcadeType = arcadeCard.getAttribute('data-arcade');
+                    startArcade(arcadeType);
+                });
+            });
+            
+            document.getElementById('submit-answer').addEventListener('click', function() {
+                if (!gameState.answerSubmitted) {
+                    checkAnswer();
+                }
+            });
+            
+            document.getElementById('user-answer').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !gameState.answerSubmitted) {
+                    checkAnswer();
+                }
+            });
+            
+            document.getElementById('play-again').addEventListener('click', function() {
+                if (currentArcade) {
+                    startArcade(currentArcade.type);
+                }
+            });
+            
+            document.getElementById('back-to-arcades').addEventListener('click', function() {
+                returnToArcades();
+            });
+        }
+
+        function switchSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            document.getElementById(sectionId).classList.add('active');
+            
+            if (sectionId === 'play-section' || sectionId === 'profile-section') {
+                document.body.classList.remove('game-mode');
+            } else if (sectionId === 'game-section' || sectionId === 'results-section') {
+                document.body.classList.add('game-mode');
+            }
+            
+            if (typeof renderMathInElement !== 'undefined') {
+                renderMathInElement(document.body);
+            }
+        }
+
+        function setActiveNav(activeNav) {
+            document.querySelectorAll('nav ul li a').forEach(nav => {
+                nav.classList.remove('active');
+            });
+            if (activeNav) {
+                activeNav.classList.add('active');
+            }
+        }
+
+        function startArcade(arcadeType) {
+            showLoadingScreen();
+            
+            currentArcade = {
+                type: arcadeType,
+                problems: [],
+                currentProblemIndex: 0,
+                correctAnswers: 0,
+                startTime: Date.now(),
+                answers: []
+            };
+            
+            setTimeout(() => {
+                generateArcadeProblems(arcadeType);
+                switchSection('game-section');
+                updateGameHeader(arcadeType);
+                showProblem(0);
+                startTimer();
+                
+                setTimeout(() => {
+                    hideLoadingScreen();
+                }, 2000);
+            }, 2000);
+        }
+
+        function generateArcadeProblems(arcadeType) {
+            const difficulty = calculateDifficulty(currentUser.level);
+            
+            for (let i = 0; i < 10; i++) {
+                let problem;
+                
+                switch(arcadeType) {
+                    case 'quadratic':
+                        problem = generateQuadraticProblem(difficulty);
+                        break;
+                    case 'parameter':
+                        problem = generateParameterProblem(difficulty);
+                        break;
+                    case 'algebra':
+                        problem = generateAlgebraProblem(difficulty);
+                        break;
+                    case 'geometry':
+                        problem = generateGeometryProblem(difficulty);
+                        break;
+                    case 'trigonometry':
+                        problem = generateTrigonometryProblem(difficulty);
+                        break;
+                }
+                
+                currentArcade.problems.push(problem);
+            }
+        }
+
+        function calculateDifficulty(level) {
+            if (level <= 3) return 'easy';
+            if (level <= 7) return 'medium';
+            return 'hard';
+        }
+
+        function getArcadeName(arcadeType) {
+            const names = {
+                quadratic: 'Quadratic Chaos',
+                parameter: 'Parameter Blitz',
+                algebra: 'Algebra Rush',
+                geometry: 'Geometry Dash',
+                trigonometry: 'Trigonometry Tower'
+            };
+            return names[arcadeType] || 'Аркада';
+        }
+
+        function generateQuadraticProblem(difficulty) {
+            let x1, x2;
+            
+            if (difficulty === 'easy') {
+                x1 = getRandomInt(-5, 5);
+                x2 = getRandomInt(-5, 5);
+            } else if (difficulty === 'medium') {
+                x1 = getRandomInt(-10, 10);
+                x2 = getRandomInt(-10, 10);
+            } else {
+                x1 = getRandomInt(-15, 15);
+                x2 = getRandomInt(-15, 15);
+            }
+            
+            const a = 1;
+            const b = -(x1 + x2);
+            const c = x1 * x2;
+            
+            const roots = [x1, x2].sort((a, b) => a - b);
+            const askFor = Math.random() < 0.5 ? 'меньший' : 'больший';
+            const correctAnswer = askFor === 'меньший' ? roots[0] : roots[1];
+            const equation = formatQuadraticEquation(a, b, c);
+            
+            return {
+                type: 'quadratic',
+                statement: `Решите уравнение: ${equation}. Введите ${askFor} корень.`,
+                correctAnswer: correctAnswer,
+                precision: 0
+            };
+        }
+
+        function generateParameterProblem(difficulty) {
+            if (difficulty === 'easy') {
+                return generateSimpleParameterEasy();
+            }
+            
+            const taskTypes = [
+                generateLinearParameter,
+                generateSystemParameter,
+                generateRationalParameter,
+                generateAbsoluteParameter
+            ];
+            
+            const randomType = taskTypes[Math.floor(Math.random() * taskTypes.length)];
+            return randomType(difficulty);
+        }
+
+        function generateSimpleParameterEasy() {
+            const taskTypes = [
+                generateSimpleLinearParameter,
+                generateSimpleRationalParameter
+            ];
+            
+            const randomType = taskTypes[Math.floor(Math.random() * taskTypes.length)];
+            return randomType();
+        }
+
+        function generateSimpleLinearParameter() {
+            const a = getRandomInt(1, 3);
+            const b = getRandomInt(1, 5);
+            const x = getRandomInt(1, 5);
+            const k = a * x - b;
+            const equation = formatLinearEquation(a, 0, 'x');
+            
+            return {
+                type: 'parameter',
+                statement: `Найдите значение параметра k, при котором уравнение ${equation} = ${b} + k имеет решение x = ${x}.`,
+                correctAnswer: k,
+                precision: 0
+            };
+        }
+
+        function generateSimpleRationalParameter() {
+            const a = getRandomInt(1, 5);
+            const b = getRandomInt(1, 5);
+            const k = a + b;
+            
+            return {
+                type: 'parameter',
+                statement: `Найдите значение параметра k, при котором уравнение (x - ${a})/(x - ${b}) = 1 имеет решение.`,
+                correctAnswer: k,
+                precision: 0
+            };
+        }
+
+        function generateLinearParameter(difficulty) {
+            let a, b, k;
+            
+            if (difficulty === 'easy') {
+                a = getRandomInt(1, 5);
+                b = getRandomInt(1, 10);
+                k = getRandomInt(1, 5);
+            } else if (difficulty === 'medium') {
+                a = getRandomInt(1, 10);
+                b = getRandomInt(1, 20);
+                k = getRandomInt(1, 10);
+            } else {
+                a = getRandomInt(1, 15);
+                b = getRandomInt(1, 30);
+                k = getRandomInt(1, 15);
+            }
+            
+            const correctAnswer = (b + k) / a;
+            const equation = formatLinearEquation(a, 0, 'x');
+            
+            return {
+                type: 'parameter',
+                statement: `Найдите значение параметра k, при котором уравнение ${equation} = ${b} + k имеет решение x = ${correctAnswer}.`,
+                correctAnswer: k,
+                precision: 0
+            };
+        }
+
+        function generateSystemParameter(difficulty) {
+            let a1, b1, c1, a2, b2, c2;
+            
+            if (difficulty === 'easy') {
+                a1 = getRandomInt(1, 3);
+                b1 = getRandomInt(1, 3);
+                c1 = getRandomInt(5, 15);
+                a2 = getRandomInt(1, 3);
+                b2 = getRandomInt(1, 3);
+                c2 = getRandomInt(5, 15);
+            } else if (difficulty === 'medium') {
+                a1 = getRandomInt(1, 5);
+                b1 = getRandomInt(1, 5);
+                c1 = getRandomInt(10, 30);
+                a2 = getRandomInt(1, 5);
+                b2 = getRandomInt(1, 5);
+                c2 = getRandomInt(10, 30);
+            } else {
+                a1 = getRandomInt(1, 8);
+                b1 = getRandomInt(1, 8);
+                c1 = getRandomInt(15, 50);
+                a2 = getRandomInt(1, 8);
+                b2 = getRandomInt(1, 8);
+                c2 = getRandomInt(15, 50);
+            }
+            
+            const k = (a1 * c2 - a2 * c1) / (a1 * b2 - a2 * b1);
+            
+            const eq1 = `${formatLinearEquation(a1, 0, 'x')} + ${formatLinearEquation(b1, 0, 'y')} = ${c1}`;
+            const eq2 = `${formatLinearEquation(a2, 0, 'x')} + ${formatLinearEquation(b2, 0, 'y')} = ${c2}`;
+            
+            return {
+                type: 'parameter',
+                statement: `Найдите значение параметра k, при котором система уравнений {${eq1}, ${eq2}} имеет решение.`,
+                correctAnswer: Math.round(k * 100) / 100,
+                precision: 2
+            };
+        }
+
+        function generateRationalParameter(difficulty) {
+            let a, b;
+            
+            if (difficulty === 'easy') {
+                a = getRandomInt(1, 5);
+                b = getRandomInt(1, 10);
+            } else if (difficulty === 'medium') {
+                a = getRandomInt(1, 10);
+                b = getRandomInt(1, 20);
+            } else {
+                a = getRandomInt(1, 15);
+                b = getRandomInt(1, 30);
+            }
+            
+            const k = a + b;
+            
+            return {
+                type: 'parameter',
+                statement: `Найдите значение параметра k, при котором уравнение (x - ${a})/(x - ${b}) = 1 имеет решение.`,
+                correctAnswer: k,
+                precision: 0
+            };
+        }
+
+        function generateAbsoluteParameter(difficulty) {
+            let a;
+            
+            if (difficulty === 'easy') {
+                a = getRandomInt(1, 5);
+            } else if (difficulty === 'medium') {
+                a = getRandomInt(1, 10);
+            } else {
+                a = getRandomInt(1, 15);
+            }
+            
+            return {
+                type: 'parameter',
+                statement: `Найдите значение параметра k, при котором уравнение |x - ${a}| = k имеет ровно одно решение.`,
+                correctAnswer: 0,
+                precision: 0
+            };
+        }
+
+        function generateAlgebraProblem(difficulty) {
+            const problemTypes = [
+                generateLinearEquationAlgebra,
+                generateSystemOfEquationsAlgebra,
+                generateSimpleEquationAlgebra,
+                generateExpressionEvaluation
+            ];
+            
+            const randomType = problemTypes[Math.floor(Math.random() * problemTypes.length)];
+            return randomType(difficulty);
+        }
+
+        function generateLinearEquationAlgebra(difficulty) {
+            let a, b;
+            
+            if (difficulty === 'easy') {
+                a = getRandomInt(1, 5);
+                b = getRandomInt(1, 10);
+            } else if (difficulty === 'medium') {
+                a = getRandomInt(1, 10);
+                b = getRandomInt(1, 20);
+            } else {
+                a = getRandomInt(1, 15);
+                b = getRandomInt(1, 30);
+            }
+            
+            const x = getRandomInt(1, 10);
+            const result = a * x + b;
+            const equation = formatLinearEquation(a, b, 'x');
+            
+            return {
+                type: 'algebra',
+                statement: `Решите уравнение: ${equation} = ${result}`,
+                correctAnswer: x,
+                precision: 0
+            };
+        }
+
+        function generateSystemOfEquationsAlgebra(difficulty) {
+            let a1, b1, c1, a2, b2, c2;
+            
+            if (difficulty === 'easy') {
+                a1 = getRandomInt(1, 3);
+                b1 = getRandomInt(1, 3);
+                c1 = getRandomInt(5, 15);
+                a2 = getRandomInt(1, 3);
+                b2 = getRandomInt(1, 3);
+                c2 = getRandomInt(5, 15);
+            } else if (difficulty === 'medium') {
+                a1 = getRandomInt(1, 5);
+                b1 = getRandomInt(1, 5);
+                c1 = getRandomInt(10, 30);
+                a2 = getRandomInt(1, 5);
+                b2 = getRandomInt(1, 5);
+                c2 = getRandomInt(10, 30);
+            } else {
+                a1 = getRandomInt(1, 8);
+                b1 = getRandomInt(1, 8);
+                c1 = getRandomInt(15, 50);
+                a2 = getRandomInt(1, 8);
+                b2 = getRandomInt(1, 8);
+                c2 = getRandomInt(15, 50);
+            }
+            
+            const x = getRandomInt(1, 10);
+            const y = getRandomInt(1, 10);
+            const d1 = a1 * x + b1 * y;
+            const d2 = a2 * x + b2 * y;
+            const askFor = Math.random() < 0.5 ? 'x' : 'y';
+            const correctAnswer = askFor === 'x' ? x : y;
+            
+            const eq1 = `${formatLinearEquation(a1, 0, 'x')} + ${formatLinearEquation(b1, 0, 'y')} = ${d1}`;
+            const eq2 = `${formatLinearEquation(a2, 0, 'x')} + ${formatLinearEquation(b2, 0, 'y')} = ${d2}`;
+            
+            return {
+                type: 'algebra',
+                statement: `Решите систему уравнений: ${eq1}, ${eq2}. Найдите ${askFor}.`,
+                correctAnswer: correctAnswer,
+                precision: 0
+            };
+        }
+
+        function generateSimpleEquationAlgebra(difficulty) {
+            let a, b;
+            
+            if (difficulty === 'easy') {
+                a = getRandomInt(1, 5);
+                b = getRandomInt(1, 10);
+            } else if (difficulty === 'medium') {
+                a = getRandomInt(1, 10);
+                b = getRandomInt(1, 20);
+            } else {
+                a = getRandomInt(1, 15);
+                b = getRandomInt(1, 30);
+            }
+            
+            const x = getRandomInt(1, 10);
+            const result = a * x - b;
+            const equation = formatLinearEquation(a, -b, 'x');
+            
+            return {
+                type: 'algebra',
+                statement: `Решите уравнение: ${equation} = ${result}`,
+                correctAnswer: x,
+                precision: 0
+            };
+        }
+
+        function generateExpressionEvaluation(difficulty) {
+            let a, b, c;
+            
+            if (difficulty === 'easy') {
+                a = getRandomInt(1, 5);
+                b = getRandomInt(1, 5);
+                c = getRandomInt(1, 10);
+            } else if (difficulty === 'medium') {
+                a = getRandomInt(1, 10);
+                b = getRandomInt(1, 10);
+                c = getRandomInt(1, 20);
+            } else {
+                a = getRandomInt(1, 15);
+                b = getRandomInt(1, 15);
+                c = getRandomInt(1, 30);
+            }
+            
+            const x = getRandomInt(1, 5);
+            const result = a * x * x + b * x + c;
+            
+            let expression = '';
+            if (a === 1) {
+                expression += 'x²';
+            } else if (a === -1) {
+                expression += '-x²';
+            } else {
+                expression += `${a}x²`;
+            }
+            
+            if (b > 0) {
+                expression += ` + ${formatCoefficient(b, 'x')}`;
+            } else if (b < 0) {
+                expression += ` - ${formatCoefficient(Math.abs(b), 'x')}`;
+            }
+            
+            if (c > 0) {
+                expression += ` + ${c}`;
+            } else if (c < 0) {
+                expression += ` - ${Math.abs(c)}`;
+            }
+            
+            return {
+                type: 'algebra',
+                statement: `Вычислите значение выражения ${expression} при x = ${x}`,
+                correctAnswer: result,
+                precision: 0
+            };
+        }
+
+        function generateGeometryProblem(difficulty) {
+            const problemTypes = [
+                generateTriangleArea,
+                generateRectanglePerimeter,
+                generatePythagoreanTriple,
+                generateVolumeCube
+            ];
+            
+            const randomType = problemTypes[Math.floor(Math.random() * problemTypes.length)];
+            return randomType(difficulty);
+        }
+
+        function generateTriangleArea(difficulty) {
+            let base, height;
+            
+            if (difficulty === 'easy') {
+                base = getRandomInt(5, 15);
+                height = getRandomInt(5, 15);
+            } else if (difficulty === 'medium') {
+                base = getRandomInt(10, 25);
+                height = getRandomInt(10, 25);
+            } else {
+                base = getRandomInt(15, 40);
+                height = getRandomInt(15, 40);
+            }
+            
+            const area = (base * height) / 2;
+            
+            return {
+                type: 'geometry',
+                statement: `Найдите площадь треугольника с основанием ${base} и высотой ${height}`,
+                correctAnswer: area,
+                precision: 0
+            };
+        }
+
+        function generateRectanglePerimeter(difficulty) {
+            let length, width;
+            
+            if (difficulty === 'easy') {
+                length = getRandomInt(5, 15);
+                width = getRandomInt(5, 15);
+            } else if (difficulty === 'medium') {
+                length = getRandomInt(10, 25);
+                width = getRandomInt(10, 25);
+            } else {
+                length = getRandomInt(15, 40);
+                width = getRandomInt(15, 40);
+            }
+            
+            const perimeter = 2 * (length + width);
+            
+            return {
+                type: 'geometry',
+                statement: `Найдите периметр прямоугольника с длиной ${length} и шириной ${width}`,
+                correctAnswer: perimeter,
+                precision: 0
+            };
+        }
+
+        function generatePythagoreanTriple(difficulty) {
+            const triples = [
+                {a: 3, b: 4, c: 5},
+                {a: 5, b: 12, c: 13},
+                {a: 8, b: 15, c: 17},
+                {a: 7, b: 24, c: 25},
+                {a: 20, b: 21, c: 29}
+            ];
+            
+            const triple = triples[Math.floor(Math.random() * triples.length)];
+            const findWhat = Math.random() < 0.5 ? 'a' : 'b';
+            const correctAnswer = findWhat === 'a' ? triple.a : triple.b;
+            const otherSide = findWhat === 'a' ? triple.b : triple.a;
+            
+            return {
+                type: 'geometry',
+                statement: `В прямоугольном треугольнике гипотенуза равна ${triple.c}, один из катетов равен ${otherSide}. Найдите другой катет.`,
+                correctAnswer: correctAnswer,
+                precision: 0
+            };
+        }
+
+        function generateVolumeCube(difficulty) {
+            let side;
+            
+            if (difficulty === 'easy') {
+                side = getRandomInt(2, 10);
+            } else if (difficulty === 'medium') {
+                side = getRandomInt(5, 15);
+            } else {
+                side = getRandomInt(10, 25);
+            }
+            
+            const volume = side * side * side;
+            
+            return {
+                type: 'geometry',
+                statement: `Найдите объем куба с ребром ${side}`,
+                correctAnswer: volume,
+                precision: 0
+            };
+        }
+
+        function generateTrigonometryProblem(difficulty) {
+            const problemTypes = [
+                generateSpecialAngleSineRational,
+                generateSpecialAngleCosineRational,
+                generateSpecialAngleTangentRational,
+                generateSimpleTrigIdentityRational,
+                generateTrigEquationRational
+            ];
+            
+            const randomType = problemTypes[Math.floor(Math.random() * problemTypes.length)];
+            return randomType(difficulty);
+        }
+
+        function generateSpecialAngleSineRational(difficulty) {
+            const angles = [
+                {angle: 0, value: 0},
+                {angle: 30, value: 0.5},
+                {angle: 90, value: 1}
+            ];
+            
+            const angleData = angles[Math.floor(Math.random() * angles.length)];
+            
+            return {
+                type: 'trigonometry',
+                statement: `Найдите sin(${angleData.angle}°)`,
+                correctAnswer: angleData.value,
+                precision: 1
+            };
+        }
+
+        function generateSpecialAngleCosineRational(difficulty) {
+            const angles = [
+                {angle: 0, value: 1},
+                {angle: 60, value: 0.5},
+                {angle: 90, value: 0}
+            ];
+            
+            const angleData = angles[Math.floor(Math.random() * angles.length)];
+            
+            return {
+                type: 'trigonometry',
+                statement: `Найдите cos(${angleData.angle}°)`,
+                correctAnswer: angleData.value,
+                precision: 1
+            };
+        }
+
+        function generateSpecialAngleTangentRational(difficulty) {
+            const angles = [
+                {angle: 0, value: 0},
+                {angle: 45, value: 1}
+            ];
+            
+            const angleData = angles[Math.floor(Math.random() * angles.length)];
+            
+            return {
+                type: 'trigonometry',
+                statement: `Найдите tan(${angleData.angle}°)`,
+                correctAnswer: angleData.value,
+                precision: 1
+            };
+        }
+
+        function generateSimpleTrigIdentityRational(difficulty) {
+            const angle = getRandomInt(0, 90);
+            
+            return {
+                type: 'trigonometry',
+                statement: `Вычислите sin²(${angle}°) + cos²(${angle}°)`,
+                correctAnswer: 1,
+                precision: 0
+            };
+        }
+
+        function generateTrigEquationRational(difficulty) {
+            const equationTypes = [
+                {type: 'sin', angles: [0, 30, 90], values: [0, 0.5, 1]},
+                {type: 'cos', angles: [0, 60, 90], values: [1, 0.5, 0]},
+                {type: 'tan', angles: [0, 45], values: [0, 1]}
+            ];
+            
+            const eqType = equationTypes[Math.floor(Math.random() * equationTypes.length)];
+            const idx = Math.floor(Math.random() * eqType.angles.length);
+            
+            const angle = eqType.angles[idx];
+            const value = eqType.values[idx];
+            
+            return {
+                type: 'trigonometry',
+                statement: `Решите уравнение: ${eqType.type}(x) = ${value}`,
+                correctAnswer: angle,
+                precision: 0
+            };
+        }
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function updateGameHeader(arcadeType) {
+            document.getElementById('current-arcade-name').textContent = getArcadeName(arcadeType);
+        }
+
+        function showProblem(problemIndex) {
+            const problem = currentArcade.problems[problemIndex];
+            document.getElementById('problem-statement').textContent = problem.statement;
+            document.getElementById('user-answer').value = '';
+            document.getElementById('current-problem').textContent = problemIndex + 1;
+            document.getElementById('game-feedback').innerHTML = '';
+            
+            document.getElementById('user-answer').focus();
+            gameState.answerSubmitted = false;
+            document.getElementById('submit-answer').disabled = false;
+            document.getElementById('user-answer').disabled = false;
+            
+            if (typeof renderMathInElement !== 'undefined') {
+                renderMathInElement(document.getElementById('problem-statement'));
+            }
+        }
+
+        function startTimer() {
+            let baseTime = 60;
+            let level = currentUser ? currentUser.level : 1;
+            let timePerLevel = Math.max(30, baseTime - (level * 3));
+            gameState.timeLeft = timePerLevel;
+            
+            document.getElementById('game-timer').textContent = gameState.timeLeft;
+
+            clearInterval(gameState.timer);
+            gameState.timer = setInterval(() => {
+                gameState.timeLeft--;
+                document.getElementById('game-timer').textContent = gameState.timeLeft;
+
+                if (gameState.timeLeft <= 0) {
+                    clearInterval(gameState.timer);
+                    handleTimeOut();
+                }
+            }, 1000);
+        }
+
+        function handleTimeOut() {
+            gameState.answerSubmitted = true;
+            
+            showFeedback('Время вышло!', 'error');
+            
+            currentArcade.answers.push({
+                problemIndex: currentArcade.currentProblemIndex,
+                userAnswer: null,
+                correct: false,
+                time: 30
+            });
+
+            setTimeout(() => {
+                nextProblem();
+            }, 1500);
+        }
+
+        function checkAnswer() {
+            if (gameState.answerSubmitted) {
+                return;
+            }
+            
+            gameState.answerSubmitted = true;
+            
+            const userAnswer = document.getElementById('user-answer').value.trim();
+            const currentProblem = currentArcade.problems[currentArcade.currentProblemIndex];
+
+            clearInterval(gameState.timer);
+
+            document.getElementById('submit-answer').disabled = true;
+            document.getElementById('user-answer').disabled = true;
+
+            const userAnswerNum = parseFloat(userAnswer.replace(',', '.'));
+
+            const tolerance = Math.pow(10, -currentProblem.precision);
+            const correct = Math.abs(userAnswerNum - currentProblem.correctAnswer) < tolerance;
+
+            currentArcade.answers.push({
+                problemIndex: currentArcade.currentProblemIndex,
+                userAnswer: userAnswerNum,
+                correct: correct,
+                time: gameState.timeLeft
+            });
+
+            if (correct) {
+                showFeedback('Правильно!', 'success');
+                currentArcade.correctAnswers++;
+            } else {
+                showFeedback(`Неправильно. Правильный ответ: ${currentProblem.correctAnswer}`, 'error');
+            }
+
+            setTimeout(() => {
+                nextProblem();
+            }, 1500);
+        }
+
+        function nextProblem() {
+            currentArcade.currentProblemIndex++;
+
+            if (currentArcade.currentProblemIndex < currentArcade.problems.length) {
+                showProblem(currentArcade.currentProblemIndex);
+                startTimer();
+            } else {
+                finishArcade();
+            }
+        }
+
+        function showFeedback(message, type) {
+            const feedback = document.getElementById('game-feedback');
+            feedback.textContent = message;
+            feedback.className = 'game-feedback';
+            if (type === 'success') {
+                feedback.style.color = '#27ae60';
+            } else if (type === 'error') {
+                feedback.style.color = '#e74c3c';
+            } else {
+                feedback.style.color = '#3498db';
+            }
+        }
+
+        function finishArcade() {
+            showLoadingScreen();
+            
+            setTimeout(() => {
+                let xpEarned = 0;
+                currentArcade.answers.forEach(answer => {
+                    if (answer.correct) {
+                        let baseXP = Math.floor(3 / 5);
+                        if (baseXP < 1) baseXP = 1;
+                        let speedBonus = Math.floor((answer.time / 30) * 0.4);
+                        let difficultyBonus = Math.floor(currentUser.level / 10);
+                        xpEarned += baseXP + speedBonus + difficultyBonus;
+                    } else {
+                        let penalty = Math.floor(2 / 5);
+                        if (penalty < 1) penalty = 1;
+                        let difficultyPenalty = Math.floor(currentUser.level / 15);
+                        xpEarned -= (penalty + difficultyPenalty);
+                    }
+                });
+
+                if (currentArcade.correctAnswers === 10) {
+                    xpEarned += Math.floor(15 / 5);
+                }
+
+                updateUserStats(currentArcade, xpEarned);
+
+                setTimeout(() => {
+                    showResults(xpEarned);
+                    hideLoadingScreen();
+                }, 2000);
+            }, 2000);
+        }
+
+        async function updateUserStats(arcade, xpEarned) {
+            if (!currentUser) return;
+
+            const oldXP = currentUser.xp;
+            const oldLevel = currentUser.level;
+            
+            currentUser.xp = Math.max(0, currentUser.xp + xpEarned);
+            currentUser.level = calculateLevel(currentUser.xp);
+
+            if (!currentUser.practice_stats.arcades[arcade.type]) {
+                currentUser.practice_stats.arcades[arcade.type] = { played: 0, correct: 0, best_score: 0, total_xp: 0 };
+            }
+
+            const arcadeStats = currentUser.practice_stats.arcades[arcade.type];
+            arcadeStats.played++;
+            arcadeStats.correct += arcade.correctAnswers;
+            arcadeStats.best_score = Math.max(arcadeStats.best_score, arcade.correctAnswers);
+            arcadeStats.total_xp += xpEarned;
+
+            currentUser.practice_stats.total_games++;
+            currentUser.practice_stats.total_correct += arcade.correctAnswers;
+            currentUser.practice_stats.total_xp_earned += xpEarned;
+
+            await forumDB.updateUser(currentUser.id, {
+                level: currentUser.level,
+                xp: currentUser.xp,
+                practice_stats: currentUser.practice_stats
+            });
+
+            localStorage.setItem('current_user', JSON.stringify(currentUser));
+            
+            updateUserStatsDisplay();
+            loadArcadeStats();
+            
+            if (currentUser.level > oldLevel) {
+                setTimeout(() => {
+                    showSuccessMessage(`Поздравляем! Вы достигли уровня ${currentUser.level}!`);
+                }, 1000);
+            }
+        }
+
+        function showResults(xpEarned) {
+            document.getElementById('correct-answers').textContent = currentArcade.correctAnswers;
+            document.getElementById('xp-earned').textContent = xpEarned;
+
+            const newLevel = calculateLevel(currentUser.xp);
+            if (newLevel > currentUser.level) {
+                document.getElementById('level-up-message').style.display = 'block';
+                document.getElementById('new-level').textContent = newLevel;
+            } else {
+                document.getElementById('level-up-message').style.display = 'none';
+            }
+
+            switchSection('results-section');
+        }
+
+        function returnToArcades() {
+            showLoadingScreen();
+            
+            setTimeout(() => {
+                switchSection('play-section');
+                setActiveNav(document.getElementById('nav-play'));
+                hideLoadingScreen();
+            }, 2000);
+        }
+
+        function loadArcadeStats() {
+            if (!currentUser) return;
+            
+            document.querySelectorAll('.arcade-card').forEach(card => {
+                const arcadeType = card.getAttribute('data-arcade');
+                const arcadeStats = currentUser.practice_stats.arcades[arcadeType];
+                
+                if (arcadeStats) {
+                    card.querySelector('.best-score').textContent = `${arcadeStats.best_score}/10`;
+                    card.querySelector('.games-played').textContent = arcadeStats.played;
+                }
+            });
+        }
+
+        function updateUserStatsDisplay() {
+            if (!currentUser) return;
+            
+            document.getElementById('user-level').textContent = currentUser.level;
+            document.getElementById('user-xp').textContent = currentUser.xp;
+            
+            const maxXPForCurrentLevel = calculateXPForLevel(currentUser.level);
+            document.getElementById('next-level-xp').textContent = maxXPForCurrentLevel;
+            
+            const prevLevelMaxXP = currentUser.level > 1 ? calculateXPForLevel(currentUser.level - 1) : 0;
+            const progress = maxXPForCurrentLevel > prevLevelMaxXP 
+                ? ((currentUser.xp - prevLevelMaxXP) / (maxXPForCurrentLevel - prevLevelMaxXP)) * 100 
+                : 100;
+            
+            document.getElementById('xp-progress').style.width = `${Math.min(Math.max(progress, 0), 100)}%`;
+        }
+
+        // Функции для работы с аккаунтом
+        function setupAuthHandlers() {
+            document.getElementById('login-btn').addEventListener('click', showAuthModal);
+            document.getElementById('logout-btn').addEventListener('click', logout);
+            
+            document.getElementById('auth-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    hideAuthModal();
+                }
+            });
+            
+            document.querySelectorAll('.auth-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    switchAuthTab(this.getAttribute('data-tab'));
+                });
+            });
+            
+            document.getElementById('switch-to-register').addEventListener('click', function() {
+                switchAuthTab('register');
+            });
+            
+            document.getElementById('switch-to-login').addEventListener('click', function() {
+                switchAuthTab('login');
+            });
+            
+            document.getElementById('submit-login').addEventListener('click', login);
+            document.getElementById('submit-register').addEventListener('click', register);
+            
+            document.getElementById('login-for-profile').addEventListener('click', showAuthModal);
+            document.getElementById('delete-account-btn').addEventListener('click', deleteAccount);
+            document.getElementById('save-description-btn').addEventListener('click', saveDescription);
+            document.getElementById('change-password-btn').addEventListener('click', changePassword);
+            
+            document.getElementById('account-description').addEventListener('input', function() {
+                document.getElementById('description-chars').textContent = this.value.length;
+            });
+            
+            document.getElementById('register-name').addEventListener('input', function() {
+                document.getElementById('register-name-chars').textContent = this.value.length;
+            });
+        }
+
+        function checkAuthState() {
+            if (currentUser) {
+                document.getElementById('login-btn').style.display = 'none';
+                document.getElementById('logout-btn').style.display = 'block';
+                document.getElementById('user-info').style.display = 'flex';
+                document.getElementById('user-name').textContent = currentUser.name;
+
+                const avatarElement = document.getElementById('user-avatar');
+                const initials = getUserInitials(currentUser.name);
+                avatarElement.textContent = initials;
+                
+                if (document.getElementById('profile-section').style.display !== 'none') {
+                    document.getElementById('profile-content').style.display = 'block';
+                    document.getElementById('profile-login-required').style.display = 'none';
+                }
+            } else {
+                document.getElementById('login-btn').style.display = 'block';
+                document.getElementById('logout-btn').style.display = 'none';
+                document.getElementById('user-info').style.display = 'none';
+                
+                if (document.getElementById('profile-section').style.display !== 'none') {
+                    document.getElementById('profile-content').style.display = 'none';
+                    document.getElementById('profile-login-required').style.display = 'block';
+                }
+            }
+        }
+
+        function showAuthModal() {
+            document.getElementById('auth-modal').style.display = 'flex';
+            switchAuthTab('login');
+        }
+
+        function hideAuthModal() {
+            document.getElementById('auth-modal').style.display = 'none';
+            document.getElementById('login-email').value = '';
+            document.getElementById('login-password').value = '';
+            document.getElementById('login-error').textContent = '';
+            
+            document.getElementById('register-name').value = '';
+            document.getElementById('register-email').value = '';
+            document.getElementById('register-password').value = '';
+            document.getElementById('register-password-confirm').value = '';
+            document.getElementById('register-error').textContent = '';
+        }
+
+        function switchAuthTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => {
+                t.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.auth-form').forEach(form => {
+                form.classList.remove('active');
+            });
+            
+            document.querySelector(`.auth-tab[data-tab="${tab}"]`).classList.add('active');
+            document.getElementById(`${tab}-form`).classList.add('active');
+        }
+
+        async function register() {
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const passwordConfirm = document.getElementById('register-password-confirm').value;
+            const errorElement = document.getElementById('register-error');
+            
+            document.getElementById('register-password-error').textContent = '';
+            errorElement.textContent = '';
+            
+            if (!name || !email || !password || !passwordConfirm) {
+                errorElement.textContent = 'Заполните все поля';
+                return;
+            }
+            
+            if (name.length > 40) {
+                errorElement.textContent = 'Имя пользователя должно быть не длиннее 40 символов';
+                return;
+            }
+            
+            if (!validatePassword(password)) {
+                document.getElementById('register-password-error').textContent = 
+                    'Пароль не соответствует требованиям';
+                return;
+            }
+            
+            if (password !== passwordConfirm) {
+                errorElement.textContent = 'Пароли не совпадают';
+                return;
+            }
+            
+            const existingUser = await forumDB.getUserByEmail(email);
+            if (existingUser) {
+                errorElement.textContent = 'Пользователь с таким email уже существует';
+                return;
+            }
+            
+            const allUsers = await forumDB.getAllUsers();
+            if (allUsers.some(u => u.name.toLowerCase() === name.toLowerCase())) {
+                errorElement.textContent = 'Пользователь с таким именем уже существует';
+                return;
+            }
+            
+            showLoadingScreen();
+            
+            try {
+                const newUser = {
+                    id: Date.now(),
+                    name: name,
+                    email: email,
+                    password: password,
+                    registration_date: new Date().toLocaleDateString('ru-RU'),
+                    description: '',
+                    level: 1,
+                    xp: 0,
+                    practice_stats: {
+                        total_games: 0,
+                        total_correct: 0,
+                        total_xp_earned: 0,
+                        arcades: {
+                            quadratic: { played: 0, correct: 0, best_score: 0, total_xp: 0 },
+                            parameter: { played: 0, correct: 0, best_score: 0, total_xp: 0 },
+                            algebra: { played: 0, correct: 0, best_score: 0, total_xp: 0 },
+                            geometry: { played: 0, correct: 0, best_score: 0, total_xp: 0 },
+                            trigonometry: { played: 0, correct: 0, best_score: 0, total_xp: 0 }
+                        }
+                    }
+                };
+                
+                await forumDB.addUser(newUser);
+                
+                currentUser = {
+                    id: newUser.id,
+                    name: newUser.name,
+                    email: newUser.email,
+                    registrationDate: newUser.registration_date,
+                    description: newUser.description,
+                    level: newUser.level,
+                    xp: newUser.xp,
+                    practice_stats: newUser.practice_stats
+                };
+                
+                localStorage.setItem('current_user', JSON.stringify(currentUser));
+                
+                checkAuthState();
+                hideAuthModal();
+                updateUserStatsDisplay();
+                loadArcadeStats();
+                showSuccessMessage(`Регистрация успешна! Добро пожаловать, ${name}!`);
+                
+            } catch (error) {
+                console.error('Ошибка при регистрации:', error);
+                errorElement.textContent = 'Ошибка при регистрации. Попробуйте еще раз.';
+            } finally {
+                hideLoadingScreen();
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorElement = document.getElementById('login-error');
+            
+            if (!email || !password) {
+                errorElement.textContent = 'Заполните все поля';
+                return;
+            }
+            
+            try {
+                const user = await forumDB.getUserByEmail(email);
+                
+                if (user && user.password === password) {
+                    showLoadingScreen();
+                    currentUser = {
+                        id: user.id,
+                        name: user.name,
+                        email: user.email,
+                        registrationDate: user.registration_date,
+                        description: user.description || '',
+                        level: calculateLevel(user.xp || 0),
+                        xp: user.xp || 0,
+                        practice_stats: user.practice_stats || {
+                            total_games: 0,
+                            total_correct: 0,
+                            total_xp_earned: 0,
+                            arcades: {
+                                quadratic: { played: 0, correct: 0, best_score: 0, total_xp: 0 },
+                                parameter: { played: 0, correct: 0, best_score: 0, total_xp: 0 },
+                                algebra: { played: 0, correct: 0, best_score: 0, total_xp: 0 },
+                                geometry: { played: 0, correct: 0, best_score: 0, total_xp: 0 },
+                                trigonometry: { played: 0, correct: 0, best_score: 0, total_xp: 0 }
+                            }
+                        }
+                    };
+                    
+                    localStorage.setItem('current_user', JSON.stringify(currentUser));
+                    checkAuthState();
+                    hideAuthModal();
+                    updateUserStatsDisplay();
+                    loadArcadeStats();
+                    showSuccessMessage(`Добро пожаловать, ${user.name}!`);
+                } else {
+                    errorElement.textContent = 'Неверный email или пароль';
+                }
+                hideLoadingScreen();
+            } catch (error) {
+                console.error('Ошибка при входе:', error);
+                errorElement.textContent = 'Ошибка при входе. Попробуйте еще раз.';
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('current_user');
+            checkAuthState();
+            showSuccessMessage('Вы вышли из аккаунта');
+            switchSection('play-section');
+        }
+
+        async function deleteAccount() {
+            if (!currentUser) return;
+            
+            if (!confirm('Вы уверены, что хотите удалить аккаунт? Это действие нельзя отменить.')) {
+                return;
+            }
+            
+            try {
+                await forumDB.deleteUser(currentUser.id);
+                logout();
+                location.reload();
+                        
+            } catch (error) {
+                console.error('Ошибка при удалении аккаунта:', error);
+                alert('Ошибка при удалении аккаунта.');
+            }
+        }
+
+        async function saveDescription() {
+            if (!currentUser) return;
+            
+            showLoadingScreen();
+            
+            const description = document.getElementById('account-description').value;
+            
+            if (description.length > 100) {
+                showSuccessMessage('Описание не может превышать 100 символов');
+                return;
+            }
+            
+            currentUser.description = description;
+            
+            try {
+                await forumDB.updateUser(currentUser.id, { description: description });
+                
+                localStorage.setItem('current_user', JSON.stringify(currentUser));
+                showSuccessMessage('Описание профиля сохранено!');
+                
+                document.getElementById('profile-description').textContent = description;
+                
+                if (typeof renderMathInElement !== 'undefined') {
+                    renderMathInElement(document.getElementById('profile-description'));
+                }
+            } catch (error) {
+                console.error('Ошибка при сохранении описания:', error);
+                showSuccessMessage('Ошибка при сохранении описания.');
+            }
+        
+            hideLoadingScreen();
+        }
+
+        async function changePassword() {
+            if (!currentUser) return;
+            
+            const oldPassword = document.getElementById('old-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmNewPassword = document.getElementById('confirm-new-password').value;
+            
+            document.getElementById('new-password-error').textContent = '';
+            document.getElementById('confirm-password-error').textContent = '';
+            
+            if (!oldPassword || !newPassword || !confirmNewPassword) {
+                showSuccessMessage('Заполните все поля для изменения пароля');
+                return;
+            }
+            
+            const user = await forumDB.getUser(currentUser.id);
+            if (!user || user.password !== oldPassword) {
+                showSuccessMessage('Старый пароль указан неверно');
+                return;
+            }
+            
+            if (!validatePassword(newPassword)) {
+                document.getElementById('new-password-error').textContent = 
+                    'Пароль не соответствует требованиям';
+                return;
+            }
+            
+            if (newPassword !== confirmNewPassword) {
+                document.getElementById('confirm-password-error').textContent = 
+                    'Пароли не совпадают';
+                return;
+            }
+            
+            showLoadingScreen();
+            
+            try {
+                await forumDB.updateUser(currentUser.id, { password: newPassword });
+                
+                document.getElementById('old-password').value = '';
+                document.getElementById('new-password').value = '';
+                document.getElementById('confirm-new-password').value = '';
+                
+                showSuccessMessage('Пароль успешно изменен!');
+            } catch (error) {
+                console.error('Ошибка при изменении пароля:', error);
+                showSuccessMessage('Ошибка при изменении пароля. Попробуйте еще раз.');
+            }
+            
+            hideLoadingScreen();
+        }
+
+        function validatePassword(password) {
+            const passwordRegex = /^[A-Za-z0-9.]{8,}$/;
+            return passwordRegex.test(password);
+        }
+
+        function showSuccessMessage(message) {
+            const successMessage = document.createElement('div');
+            successMessage.className = 'success-message';
+            successMessage.innerHTML = `
+                <i class="fas fa-check-circle"></i>
+                <span>${message}</span>
+            `;
+            successMessage.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #d4edda;
+                color: #155724;
+                padding: 15px 20px;
+                border-radius: 5px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                z-index: 10000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            `;
+            
+            document.body.appendChild(successMessage);
+            
+            setTimeout(() => {
+                successMessage.remove();
+            }, 4000);
+        }
+
+        function loadProfileData() {
+            if (!currentUser) return;
+            
+            document.getElementById('profile-name').textContent = currentUser.name;
+            document.getElementById('profile-level').textContent = currentUser.level;
+            document.getElementById('profile-xp').textContent = currentUser.xp;
+            
+            const maxXPForCurrentLevel = calculateXPForLevel(currentUser.level);
+            document.getElementById('profile-next-xp').textContent = maxXPForCurrentLevel;
+            
+            document.getElementById('profile-description').textContent = currentUser.description || 'Пользователь еще не добавил описание';
+            document.getElementById('profile-registration-date').textContent = currentUser.registrationDate || 'Неизвестно';
+            
+            const profileAvatar = document.getElementById('profile-avatar');
+            const initials = getUserInitials(currentUser.name);
+            profileAvatar.textContent = initials;
+            
+            const prevLevelMaxXP = currentUser.level > 1 ? calculateXPForLevel(currentUser.level - 1) : 0;
+            const progress = maxXPForCurrentLevel > prevLevelMaxXP 
+                ? ((currentUser.xp - prevLevelMaxXP) / (maxXPForCurrentLevel - prevLevelMaxXP)) * 100 
+                : 100;
+            document.getElementById('profile-xp-progress').style.width = `${Math.min(Math.max(progress, 0), 100)}%`;
+            
+            document.getElementById('total-games').textContent = currentUser.practice_stats.total_games;
+            document.getElementById('total-correct').textContent = currentUser.practice_stats.total_correct;
+            document.getElementById('accuracy').textContent = currentUser.practice_stats.total_games > 0 
+                ? Math.round((currentUser.practice_stats.total_correct / (currentUser.practice_stats.total_games * 10)) * 100) + '%'
+                : '0%';
+            document.getElementById('total-xp').textContent = currentUser.practice_stats.total_xp_earned;
+            
+            const table = document.getElementById('arcade-stats-table');
+            const rows = table.querySelectorAll('.stats-row:not(:first-child)');
+            rows.forEach(row => row.remove());
+            
+            for (const [arcade, stats] of Object.entries(currentUser.practice_stats.arcades)) {
+                const row = document.createElement('div');
+                row.className = 'stats-row';
+                row.innerHTML = `
+                    <div class="stats-cell">${getArcadeName(arcade)}</div>
+                    <div class="stats-cell">${stats.played}</div>
+                    <div class="stats-cell">${stats.correct}</div>
+                    <div class="stats-cell">${stats.best_score}/10</div>
+                    <div class="stats-cell">${stats.total_xp}</div>
+                `;
+                table.appendChild(row);
+            }
+            
+            document.getElementById('account-description').value = currentUser.description || '';
+            document.getElementById('description-chars').textContent = (currentUser.description || '').length;
+            
+            if (typeof renderMathInElement !== 'undefined') {
+                renderMathInElement(document.getElementById('profile-description'));
+            }
+        }
+    </script>
+</body>
+</html>
