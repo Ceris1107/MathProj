@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор задач с параметром</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .task {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .answer {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f5e8;
+            border-radius: 5px;
+            display: none;
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        input[type="text"] {
+            padding: 8px;
+            width: 300px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .correct {
+            color: #4CAF50;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .incorrect {
+            color: #f44336;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .hint {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .explanation {
+            margin-top: 10px;
+            font-style: italic;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Генератор задач с параметром</h1>
+        
+        <div class="controls">
+            <button onclick="generateTask()">Сгенерировать новую задачу</button>
+            <button onclick="checkAnswer()">Проверить ответ</button>
+            <button onclick="showAnswer()">Показать решение</button>
+        </div>
+
+        <div class="task" id="taskText">
+            Нажмите "Сгенерировать новую задачу" для начала
+        </div>
+
+        <div class="input-group">
+            <label for="userAnswer">Ваш ответ (дробная часть после точки; без пробелов):</label><br>
+            <input type="text" id="userAnswer" placeholder="Например: 5, -4.7, -3, 0.5">
+        </div>
+
+        <div id="resultMessage"></div>
+
+        <div class="answer" id="answerSection">
+            <strong>Правильный ответ:</strong> <span id="correctAnswer"></span>
+            <div class="explanation" id="explanation"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentTask = null;
+        let currentCorrectAnswers = [];
+        let currentExplanation = "";
+
+        // Функции для форматирования уравнений
+        function formatCoefficient(coef, variable = '') {
+            if (coef === 0) return '';
+            if (coef === 1) return variable;
+            if (coef === -1) return '-' + variable;
+            return coef + variable;
+        }
+
+        function formatLinearTerm(coef, variable) {
+            return formatCoefficient(coef, variable);
+        }
+
+        function formatQuadraticEquation(a, b, c) {
+            const parts = [];
+            
+            // Квадратный член
+            if (a !== 0) {
+                parts.push(formatCoefficient(a, 'x²'));
+            }
+            
+            // Линейный член
+            if (b !== 0) {
+                parts.push(formatCoefficient(b, 'x'));
+            }
+            
+            // Свободный член
+            if (c !== 0) {
+                parts.push(c.toString());
+            }
+            
+            // Если все коэффициенты нулевые
+            if (parts.length === 0) return '0 = 0';
+            
+            return parts.join(' + ').replace(/\+ -/g, '- ') + ' = 0';
+        }
+
+        function formatQuadraticWithParameter(a, b, c, paramPos) {
+            const parts = [];
+            
+            if (paramPos === 0) {
+                parts.push(formatCoefficient('p', 'x²'));
+            } else {
+                if (a !== 0) parts.push(formatCoefficient(a, 'x²'));
+            }
+            
+            if (paramPos === 1) {
+                parts.push(formatCoefficient('p', 'x'));
+            } else {
+                if (b !== 0) parts.push(formatCoefficient(b, 'x'));
+            }
+            
+            if (paramPos === 2) {
+                if (c === 0) {
+                    parts.push('p');
+                } else {
+                    parts.push(`(${c} + p)`);
+                }
+            } else {
+                if (c !== 0) parts.push(c.toString());
+            }
+            
+            if (parts.length === 0) return '0 = 0';
+            return parts.join(' + ').replace(/\+ -/g, '- ') + ' = 0';
+        }
+
+        function formatLinearEquation(a, b, c, paramPos = -1) {
+            const parts = [];
+            
+            if (paramPos === 0) {
+                parts.push(formatCoefficient('p', 'x'));
+            } else {
+                if (a !== 0) parts.push(formatCoefficient(a, 'x'));
+            }
+            
+            if (paramPos === 1) {
+                parts.push(formatCoefficient('p', 'y'));
+            } else {
+                if (b !== 0) parts.push(formatCoefficient(b, 'y'));
+            }
+            
+            if (parts.length === 0) return `0 = ${c}`;
+            return parts.join(' + ').replace(/\+ -/g, '- ') + ` = ${c}`;
+        }
+
+        function generateTask() {
+            const taskTypes = [
+                generateQuadraticRoots,
+                generateSystemNoSolution,
+                generateRationalEquation,
+                generateAbsoluteValue,
+                generateParameterFromRoot,
+                generateQuadraticNoRoots,
+                generateQuadraticPositiveRoots
+            ];
+            
+            const randomType = taskTypes[Math.floor(Math.random() * taskTypes.length)];
+            const result = randomType();
+            
+            currentTask = result.task;
+            currentCorrectAnswers = result.answers;
+            currentExplanation = result.explanation || "";
+            
+            document.getElementById('taskText').textContent = currentTask;
+            document.getElementById('answerSection').style.display = 'none';
+            document.getElementById('userAnswer').value = '';
+            document.getElementById('resultMessage').innerHTML = '';
+        }
+
+        function generateQuadraticRoots() {
+            const a = getRandomInt(1, 5);
+            const b = getRandomInt(-8, 8);
+            const c = getRandomInt(-10, 10);
+            
+            // Критическое значение параметра (когда D=0)
+            const criticalValue = (b*b - 4*a*c) / (4*a);
+            
+            const conditionType = Math.floor(Math.random() * 4);
+            let task, answers;
+            
+            if (conditionType === 0) {
+                // Наибольшее целое значение параметра, при котором уравнение имеет два корня
+                const answer = Math.floor(criticalValue - 0.1);
+                const equation = formatQuadraticWithParameter(a, b, c, 2);
+                task = `Найдите наибольшее целое значение параметра p, при котором уравнение ${equation} имеет два различных корня.`;
+                answers = [answer];
+                currentExplanation = `Уравнение имеет два корня, когда дискриминант D > 0. D = ${b}² - 4*${a}*(${c}+p) = ${b*b - 4*a*c} - ${4*a}p > 0. Решаем: p < ${criticalValue}. Наибольшее целое значение: ${answer}.`;
+            } else if (conditionType === 1) {
+                // Наименьшее целое значение параметра, при котором уравнение не имеет корней
+                const answer = Math.ceil(criticalValue + 0.1);
+                const equation = formatQuadraticWithParameter(a, b, c, 2);
+                task = `Найдите наименьшее целое значение параметра p, при котором уравнение ${equation} не имеет действительных корней.`;
+                answers = [answer];
+                currentExplanation = `Уравнение не имеет корней, когда дискриминант D < 0. D = ${b}² - 4*${a}*(${c}+p) = ${b*b - 4*a*c} - ${4*a}p < 0. Решаем: p > ${criticalValue}. Наименьшее целое значение: ${answer}.`;
+            } else if (conditionType === 2) {
+                // Значение параметра, при котором уравнение имеет один корень
+                const equation = formatQuadraticWithParameter(a, b, c, 2);
+                task = `Найдите значение параметра p, при котором уравнение ${equation} имеет ровно один корень.`;
+                answers = [criticalValue];
+                currentExplanation = `Уравнение имеет один корень, когда дискриминант D = 0. D = ${b}² - 4*${a}*(${c}+p) = ${b*b - 4*a*c} - ${4*a}p = 0. Решаем: p = ${criticalValue}.`;
+            } else {
+                // Наибольшее целое отрицательное значение параметра, при котором уравнение имеет два корня
+                const maxNegative = Math.min(-1, Math.floor(criticalValue - 0.1));
+                const equation = formatQuadraticWithParameter(a, b, c, 2);
+                task = `Найдите наибольшее целое отрицательное значение параметра p, при котором уравнение ${equation} имеет два различных корня.`;
+                answers = [maxNegative];
+                currentExplanation = `Уравнение имеет два корня, когда дискриминант D > 0. D = ${b}² - 4*${a}*(${c}+p) = ${b*b - 4*a*c} - ${4*a}p > 0. Решаем: p < ${criticalValue}. Наибольшее целое отрицательное значение: ${maxNegative}.`;
+            }
+            
+            return {
+                task: task,
+                answers: answers,
+                explanation: currentExplanation
+            };
+        }
+
+        function generateSystemNoSolution() {
+            const a1 = getRandomInt(1, 5);
+            const b1 = getRandomInt(1, 5);
+            const c1 = getRandomInt(5, 15);
+            const a2 = getRandomInt(1, 5);
+            const b2 = getRandomInt(1, 5);
+            const c2 = getRandomInt(5, 15);
+            
+            // Заменяем один коэффициент на параметр p
+            const replaceIndex = Math.floor(Math.random() * 2);
+            let task, answers;
+            
+            if (replaceIndex === 0) {
+                // Заменяем a1 на p
+                const criticalValue = (a2 * b1) / b2;
+                const eq1 = formatLinearEquation(a1, b1, c1, 0);
+                const eq2 = formatLinearEquation(a2, b2, c2);
+                task = `Найдите значение параметра p, при котором система уравнений { ${eq1}; ${eq2} } не имеет решений.`;
+                answers = [criticalValue];
+                currentExplanation = `Система не имеет решений, когда коэффициенты при переменных пропорциональны, но свободные члены не пропорциональны. p/${a2} = ${b1}/${b2} ≠ ${c1}/${c2}. Отсюда p = ${criticalValue}.`;
+            } else {
+                // Заменяем b1 на p
+                const criticalValue = (a1 * b2) / a2;
+                const eq1 = formatLinearEquation(a1, b1, c1, 1);
+                const eq2 = formatLinearEquation(a2, b2, c2);
+                task = `Найдите значение параметра p, при котором система уравнений { ${eq1}; ${eq2} } не имеет решений.`;
+                answers = [criticalValue];
+                currentExplanation = `Система не имеет решений, когда коэффициенты при переменных пропорциональны, но свободные члены не пропорциональны. ${a1}/${a2} = p/${b2} ≠ ${c1}/${c2}. Отсюда p = ${criticalValue}.`;
+            }
+            
+            return {
+                task: task,
+                answers: answers,
+                explanation: currentExplanation
+            };
+        }
+
+        function generateRationalEquation() {
+            const m = getRandomInt(2, 6);
+            const n = getRandomInt(1, 5);
+            
+            // Уравнение (x - m)/(x² - nx + p) = 0
+            // Не имеет решений, когда x = m является корнем знаменателя
+            // m² - n*m + p = 0 => p = n*m - m²
+            const criticalValue = n * m - m * m;
+            
+            // Форматируем знаменатель
+            const denominatorParts = [];
+            denominatorParts.push(formatCoefficient(1, 'x²'));
+            denominatorParts.push(formatCoefficient(-n, 'x'));
+            denominatorParts.push('p');
+            const denominator = denominatorParts.filter(part => part !== '').join(' + ').replace(/\+ -/g, '- ');
+            
+            task = `Найдите значение параметра p, при котором уравнение (x - ${m})/(${denominator}) = 0 не имеет решений.`;
+            answers = [criticalValue];
+            currentExplanation = `Уравнение не имеет решений, когда x = ${m} является корнем знаменателя, т.е. p = ${n}*${m} - ${m}² = ${criticalValue}.`;
+            
+            return {
+                task: task,
+                answers: answers,
+                explanation: currentExplanation
+            };
+        }
+
+        function generateAbsoluteValue() {
+            const conditionType = Math.floor(Math.random() * 4);
+            let task, answers;
+            
+            if (conditionType === 0) {
+                // Уравнение с одним модулем |x - a| = p
+                const a = getRandomInt(1, 5);
+                
+                // Наибольшее целое значение параметра, при котором уравнение имеет одно решение
+                const answer = 0;
+                task = `Найдите наибольшее целое значение параметра p, при котором уравнение |x - ${a}| = p имеет ровно одно решение.`;
+                answers = [answer];
+                currentExplanation = `Уравнение |x - ${a}| = p имеет ровно одно решение при p = 0, это x = ${a}. При p > 0 уравнение имеет два решения. Наибольшее целое значение: ${answer}.`;
+            } else if (conditionType === 1) {
+                // Уравнение с одним модулем |x - a| = p
+                const a = getRandomInt(1, 5);
+                
+                // Наименьшее целое значение параметра, при котором уравнение имеет два решения
+                const answer = 1;
+                task = `Найдите наименьшее целое значение параметра p, при котором уравнение |x - ${a}| = p имеет ровно два решения.`;
+                answers = [answer];
+                currentExplanation = `Уравнение |x - ${a}| = p имеет два решения при любом p > 0. Наименьшее целое значение: ${answer}.`;
+            } else if (conditionType === 2) {
+                // Уравнение с двумя модулями |x - a| + |x - b| = p
+                let a, b;
+                do {
+                    a = getRandomInt(1, 5);
+                    b = getRandomInt(1, 5);
+                } while (a === b);
+                
+                const min = Math.min(a, b);
+                const max = Math.max(a, b);
+                const criticalValue = max - min;
+                
+                // Значение параметра, при котором уравнение имеет бесконечно много решений
+                task = `Найдите значение параметра p, при котором уравнение |x - ${a}| + |x - ${b}| = p имеет бесконечно много решений.`;
+                answers = [criticalValue];
+                currentExplanation = `Уравнение |x - ${a}| + |x - ${b}| = p имеет бесконечно много решений при p = ${criticalValue} (все x из отрезка [${min}, ${max}] являются решениями).`;
+            } else {
+                // Уравнение с двумя модулями |x - a| + |x - b| = p
+                let a, b;
+                do {
+                    a = getRandomInt(1, 5);
+                    b = getRandomInt(1, 5);
+                } while (a === b);
+                
+                const min = Math.min(a, b);
+                const max = Math.max(a, b);
+                const criticalValue = max - min;
+                
+                // Наименьшее целое значение параметра, при котором уравнение имеет два решения
+                const answer = Math.floor(criticalValue) + 1;
+                task = `Найдите наименьшее целое значение параметра p, при котором уравнение |x - ${a}| + |x - ${b}| = p имеет ровно два решения.`;
+                answers = [answer];
+                currentExplanation = `Уравнение |x - ${a}| + |x - ${b}| = p имеет ровно два решения при p > ${criticalValue}. Наименьшее целое значение: ${answer}.`;
+            }
+            
+            return {
+                task: task,
+                answers: answers,
+                explanation: currentExplanation
+            };
+        }
+
+        function generateParameterFromRoot() {
+            const root = getRandomInt(1, 5);
+            const a = getRandomInt(1, 4);
+            const b = getRandomInt(-5, 5);
+            
+            // Уравнение ax² + bx + p = 0 имеет корень x = root
+            // a*root² + b*root + p = 0 => p = -a*root² - b*root
+            const p = -a * root * root - b * root;
+            
+            const equation = formatQuadraticWithParameter(a, b, 0, 2);
+            task = `Найдите значение параметра p, при котором число ${root} является корнем уравнения ${equation}.`;
+            answers = [p];
+            currentExplanation = `Если ${root} - корень уравнения, то он обращает уравнение в верное равенство: ${a}*${root}² + ${b}*${root} + p = 0. Отсюда p = -${a*root*root + b*root} = ${p}.`;
+            
+            return {
+                task: task,
+                answers: answers,
+                explanation: currentExplanation
+            };
+        }
+
+        function generateQuadraticNoRoots() {
+            const a = getRandomInt(1, 5);
+            const b = getRandomInt(1, 5);
+            
+            // Уравнение ax² + bx + p = 0 не имеет корней при D < 0
+            // D = b² - 4a*p < 0 => p > b²/(4a)
+            const criticalValue = (b * b) / (4 * a);
+            
+            const conditionType = Math.floor(Math.random() * 2);
+            let task, answers;
+            
+            if (conditionType === 0) {
+                // Наименьшее целое значение параметра, при котором уравнение не имеет корней
+                const answer = Math.ceil(criticalValue + 0.1);
+                const equation = formatQuadraticWithParameter(a, b, 0, 2);
+                task = `Найдите наименьшее целое значение параметра p, при котором уравнение ${equation} не имеет действительных корней.`;
+                answers = [answer];
+                currentExplanation = `Уравнение не имеет корней, когда дискриминант D < 0. D = ${b}² - 4*${a}*p = ${b*b} - ${4*a}p < 0. Решаем: p > ${criticalValue}. Наименьшее целое значение: ${answer}.`;
+            } else {
+                // Наибольшее целое значение параметра, при котором уравнение имеет корни
+                const answer = Math.floor(criticalValue - 0.1);
+                const equation = formatQuadraticWithParameter(a, b, 0, 2);
+                task = `Найдите наибольшее целое значение параметра p, при котором уравнение ${equation} имеет хотя бы один действительный корень.`;
+                answers = [answer];
+                currentExplanation = `Уравнение имеет корни, когда дискриминант D ≥ 0. D = ${b}² - 4*${a}*p = ${b*b} - ${4*a}p ≥ 0. Решаем: p ≤ ${criticalValue}. Наибольшее целое значение: ${answer}.`;
+            }
+            
+            return {
+                task: task,
+                answers: answers,
+                explanation: currentExplanation
+            };
+        }
+
+        function generateQuadraticPositiveRoots() {
+            // Генерируем квадратное уравнение, которое гарантированно может иметь два положительных корня
+            const r1 = getRandomInt(1, 5);
+            const r2 = getRandomInt(1, 5);
+            
+            const sum = r1 + r2;
+            const product = r1 * r2;
+            
+            // Уравнение: x² - sum*x + (product + p) = 0
+            const upperBound = (sum*sum)/4 - product;
+            const lowerBound = -product;
+            
+            const conditionType = Math.floor(Math.random() * 2);
+            let task, answers;
+            
+            if (conditionType === 0) {
+                // Наибольшее целое значение параметра, при котором оба корня положительны
+                const answer = Math.floor(upperBound - 0.1);
+                const equation = formatQuadraticWithParameter(1, -sum, product, 2);
+                task = `Найдите наибольшее целое значение параметра p, при котором оба корня уравнения ${equation} положительны.`;
+                answers = [answer];
+                currentExplanation = `Оба корня положительны, когда дискриминант D ≥ 0 (p ≤ ${upperBound}) и произведение корней > 0 (p > ${lowerBound}). Наибольшее целое значение: ${answer}.`;
+            } else {
+                // Наименьшее целое значение параметра, при котором оба корня положительны
+                const answer = Math.ceil(lowerBound + 0.1);
+                const equation = formatQuadraticWithParameter(1, -sum, product, 2);
+                task = `Найдите наименьшее целое значение параметра p, при котором оба корня уравнения ${equation} положительны.`;
+                answers = [answer];
+                currentExplanation = `Оба корня положительны, когда дискриминант D ≥ 0 (p ≤ ${upperBound}) и произведение корней > 0 (p > ${lowerBound}). Наименьшее целое значение: ${answer}.`;
+            }
+            
+            return {
+                task: task,
+                answers: answers,
+                explanation: currentExplanation
+            };
+        }
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function parseUserInput(input) {
+            return input.replace(/\s/g, '').split(',')
+                .filter(val => val !== '')
+                .map(val => {
+                    const num = parseFloat(val);
+                    return isNaN(num) ? null : num;
+                })
+                .filter(val => val !== null);
+        }
+
+        function arraysEqual(arr1, arr2) {
+            if (arr1.length !== arr2.length) return false;
+            
+            const sorted1 = [...arr1].sort((a, b) => a - b);
+            const sorted2 = [...arr2].sort((a, b) => a - b);
+            
+            for (let i = 0; i < sorted1.length; i++) {
+                if (Math.abs(sorted1[i] - sorted2[i]) > 0.01) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function checkAnswer() {
+            if (!currentTask) {
+                alert('Сначала сгенерируйте задачу!');
+                return;
+            }
+            
+            const userInput = document.getElementById('userAnswer').value;
+            const userAnswers = parseUserInput(userInput);
+            const resultDiv = document.getElementById('resultMessage');
+            
+            if (userAnswers.length === 0) {
+                resultDiv.innerHTML = '<p class="incorrect">Введите численные значения через запятую</p>';
+                return;
+            }
+            
+            if (arraysEqual(userAnswers, currentCorrectAnswers)) {
+                resultDiv.innerHTML = '<p class="correct">✓ Верно! Правильный ответ.</p>';
+            } else {
+                resultDiv.innerHTML = '<p class="incorrect">✗ Неверно. Попробуйте еще раз или посмотрите правильный ответ.</p>';
+            }
+        }
+
+        function showAnswer() {
+            if (!currentTask) {
+                alert('Сначала сгенерируйте задачу!');
+                return;
+            }
+            document.getElementById('correctAnswer').textContent = currentCorrectAnswers.join(', ');
+            document.getElementById('explanation').textContent = currentExplanation;
+            document.getElementById('answerSection').style.display = 'block';
+        }
+
+        // Генерируем первую задачу при загрузке
+        generateTask();
+    </script>
+</body>
+</html>

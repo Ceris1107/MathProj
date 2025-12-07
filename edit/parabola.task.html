@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор квадратных уравнений</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.2rem;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .difficulty-selector {
+            margin: 25px 0;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .difficulty-btn {
+            padding: 12px 24px;
+            border: 2px solid;
+            background-color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            font-size: 16px;
+            min-width: 120px;
+        }
+        
+        .difficulty-btn.easy {
+            border-color: #2ecc71;
+            color: #2ecc71;
+        }
+        
+        .difficulty-btn.medium {
+            border-color: #f39c12;
+            color: #f39c12;
+        }
+        
+        .difficulty-btn.hard {
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+        
+        .difficulty-btn.active.easy {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .difficulty-btn.active.medium {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .difficulty-btn.active.hard {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .difficulty-btn:hover:not(.active) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .equation-container {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #e0e0e0;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .equation {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .roots {
+            font-size: 20px;
+            color: #27ae60;
+            font-weight: 600;
+        }
+        
+        .btn {
+            background: linear-gradient(to right, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+        }
+        
+        .info {
+            margin-top: 30px;
+            font-size: 15px;
+            color: #7f8c8d;
+            text-align: left;
+            border-top: 1px solid #ecf0f1;
+            padding-top: 20px;
+            line-height: 1.6;
+        }
+        
+        .check-mark {
+            color: #27ae60;
+            font-weight: bold;
+            margin-left: 10px;
+            font-size: 16px;
+        }
+        
+        .difficulty-info {
+            margin-top: 15px;
+            font-size: 16px;
+            color: #5a6c7d;
+            font-weight: 500;
+            padding: 12px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .verification {
+            margin-top: 15px;
+            font-size: 16px;
+        }
+        
+        @media (max-width: 600px) {
+            .difficulty-selector {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .equation {
+                font-size: 22px;
+            }
+            
+            .roots {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Генератор квадратных уравнений</h1>
+        
+        <div class="difficulty-selector">
+            <button class="difficulty-btn easy active" data-difficulty="easy">Простая</button>
+            <button class="difficulty-btn medium" data-difficulty="medium">Нормальная</button>
+            <button class="difficulty-btn hard" data-difficulty="hard">Сложная</button>
+        </div>
+        
+        <div class="difficulty-info" id="difficultyInfo">
+            Коэффициент a: 1, -1, 2 или -2; все коэффициенты целые; корни целые
+        </div>
+        
+        <div class="equation-container">
+            <div class="equation" id="equation">Нажмите кнопку для генерации уравнения</div>
+            <div class="roots" id="roots"></div>
+            <div class="verification" id="verification"></div>
+        </div>
+        
+        <button class="btn" id="generateBtn">Сгенерировать уравнение</button>
+        
+        <div class="info">
+            <p><strong>Алгоритм генерирует случайные квадратные уравнения с действительными корнями.</strong></p>
+            <p>• <strong>Простая</strong>: небольшие целые коэффициенты и корни, идеально для начинающих</p>
+            <p>• <strong>Нормальная</strong>: большой разброс целых коэффициентов и корней</p>
+            <p>• <strong>Сложная</strong>: коэффициенты и/или корни - десятичные дроби</p>
+            <p>Каждое уравнение проверяется на корректность - подстановка корней должна давать ноль.</p>
+        </div>
+    </div>
+
+    <script>
+        let currentDifficulty = 'easy';
+        
+        // Обработчики для кнопок сложности
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentDifficulty = this.dataset.difficulty;
+                updateDifficultyInfo();
+            });
+        });
+        
+        // Обновление информации о сложности
+        function updateDifficultyInfo() {
+            const infoElement = document.getElementById('difficultyInfo');
+            switch(currentDifficulty) {
+                case 'easy':
+                    infoElement.textContent = 'Коэффициент a: 1, -1, 2 или -2; все коэффициенты целые; корни целые';
+                    infoElement.style.borderLeftColor = '#2ecc71';
+                    break;
+                case 'medium':
+                    infoElement.textContent = 'Большой разброс целых коэффициентов и корней; все коэффициенты целые';
+                    infoElement.style.borderLeftColor = '#f39c12';
+                    break;
+                case 'hard':
+                    infoElement.textContent = 'Коэффициенты и/или корни - десятичные дроби';
+                    infoElement.style.borderLeftColor = '#e74c3c';
+                    break;
+            }
+        }
+        
+        // Генерация уравнения
+        document.getElementById('generateBtn').addEventListener('click', function() {
+            const {equation, roots, verification} = generateQuadraticEquation(currentDifficulty);
+            document.getElementById('equation').textContent = equation;
+            document.getElementById('roots').textContent = roots;
+            document.getElementById('verification').innerHTML = verification;
+        });
+
+        function generateQuadraticEquation(difficulty) {
+            let x1, x2, a, b, c;
+            
+            switch(difficulty) {
+                case 'easy':
+                    // Простая: a = 1, -1, 2 или -2; все коэффициенты целые; корни целые
+                    const possibleA = [1, -1, 2, -2];
+                    a = possibleA[Math.floor(Math.random() * possibleA.length)];
+                    
+                    // Генерируем целые корни в небольшом диапазоне
+                    x1 = getRandomInt(-8, 8, true);
+                    x2 = getRandomInt(-8, 8, true);
+                    
+                    // Вычисляем коэффициенты
+                    b = -a * (x1 + x2);
+                    c = a * x1 * x2;
+                    break;
+                    
+                case 'medium':
+                    // Нормальная: большой разброс целых коэффициентов и корней
+                    a = getRandomInt(1, 15) * (Math.random() < 0.5 ? 1 : -1);
+                    
+                    // Генерируем целые корни в широком диапазоне
+                    x1 = getRandomInt(-15, 15, true);
+                    x2 = getRandomInt(-15, 15, true);
+                    
+                    // Вычисляем коэффициенты
+                    b = -a * (x1 + x2);
+                    c = a * x1 * x2;
+                    break;
+                    
+                case 'hard':
+                    // Сложная: коэффициенты и/или корни - десятичные дроби
+                    // 70% уравнений с десятичными корнями, 30% с целыми
+                    if (Math.random() < 0.7) {
+                        // Десятичные корни
+                        x1 = getRandomDecimal(-10, 10);
+                        x2 = getRandomDecimal(-10, 10);
+                    } else {
+                        // Целые корни
+                        x1 = getRandomInt(-10, 10, true);
+                        x2 = getRandomInt(-10, 10, true);
+                    }
+                    
+                    // 50% уравнений с десятичным коэффициентом a
+                    if (Math.random() < 0.5) {
+                        a = getRandomDecimal(0.5, 8) * (Math.random() < 0.5 ? 1 : -1);
+                    } else {
+                        a = getRandomInt(1, 8) * (Math.random() < 0.5 ? 1 : -1);
+                    }
+                    
+                    b = -a * (x1 + x2);
+                    c = a * x1 * x2;
+                    break;
+            }
+            
+            // Форматируем уравнение
+            const equationStr = formatEquation(a, b, c);
+            
+            // Форматируем корни
+            const rootsStr = formatRoots(x1, x2, difficulty);
+            
+            // Проверяем корни
+            const isCorrect = verifyRoots(a, b, c, x1, x2);
+            const verification = isCorrect ? 
+                '<span class="check-mark">✓ Корни проверены - верны!</span>' : 
+                '<span style="color: red;">✗ Ошибка в корнях</span>';
+            
+            return {
+                equation: equationStr,
+                roots: rootsStr,
+                verification: verification
+            };
+        }
+        
+        function getRandomInt(min, max, excludeZero = false) {
+            let result;
+            do {
+                result = Math.floor(Math.random() * (max - min + 1)) + min;
+            } while (excludeZero && result === 0);
+            return result;
+        }
+        
+        function getRandomDecimal(min, max) {
+            // Генерируем десятичное число с одним знаком после запятой
+            let result;
+            do {
+                result = Math.round((Math.random() * (max - min) + min) * 10) / 10;
+            } while (result === 0); // Избегаем нулевых значений
+            return result;
+        }
+        
+        function formatEquation(a, b, c) {
+            let equationParts = [];
+            
+            // Коэффициент a
+            if (a === 1) {
+                equationParts.push("x²");
+            } else if (a === -1) {
+                equationParts.push("-x²");
+            } else {
+                equationParts.push(`${formatNumber(a)}x²`);
+            }
+            
+            // Коэффициент b
+            if (Math.abs(b) > 1e-10) {
+                if (b > 0) {
+                    if (b === 1) {
+                        equationParts.push("+ x");
+                    } else {
+                        equationParts.push(`+ ${formatNumber(b)}x`);
+                    }
+                } else {
+                    if (b === -1) {
+                        equationParts.push("- x");
+                    } else {
+                        equationParts.push(`- ${formatNumber(-b)}x`);
+                    }
+                }
+            }
+            
+            // Коэффициент c
+            if (Math.abs(c) > 1e-10) {
+                if (c > 0) {
+                    equationParts.push(`+ ${formatNumber(c)}`);
+                } else {
+                    equationParts.push(`- ${formatNumber(-c)}`);
+                }
+            }
+            
+            return equationParts.join(" ") + " = 0";
+        }
+        
+        function formatNumber(num) {
+            // Округляем до 2 знаков после запятой, если нужно
+            if (Math.abs(num - Math.round(num)) < 1e-10) {
+                return Math.round(num);
+            } else {
+                return Math.round(num * 100) / 100;
+            }
+        }
+        
+        function formatRoots(x1, x2, difficulty) {
+            if (difficulty === 'easy' || difficulty === 'medium') {
+                // В простом и нормальном режиме корни всегда целые
+                return `x₁ = ${Math.round(x1)}, x₂ = ${Math.round(x2)}`;
+            } else {
+                // В сложном режиме форматируем в зависимости от типа корней
+                const isX1Integer = Math.abs(x1 - Math.round(x1)) < 1e-10;
+                const isX2Integer = Math.abs(x2 - Math.round(x2)) < 1e-10;
+                
+                const x1Str = isX1Integer ? Math.round(x1).toString() : x1.toFixed(1);
+                const x2Str = isX2Integer ? Math.round(x2).toString() : x2.toFixed(1);
+                
+                return `x₁ = ${x1Str}, x₂ = ${x2Str}`;
+            }
+        }
+        
+        function verifyRoots(a, b, c, x1, x2) {
+            // Проверяем первый корень
+            const check1 = a * x1 * x1 + b * x1 + c;
+            // Проверяем второй корень
+            const check2 = a * x2 * x2 + b * x2 + c;
+            
+            return Math.abs(check1) < 1e-10 && Math.abs(check2) < 1e-10;
+        }
+        
+        // Генерируем первое уравнение при загрузке страницы
+        window.addEventListener('load', function() {
+            document.getElementById('generateBtn').click();
+        });
+    </script>
+</body>
+</html>
